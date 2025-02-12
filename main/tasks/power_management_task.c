@@ -346,6 +346,7 @@ void POWER_MANAGEMENT_task(void * pvParameters)
 
                     break;
                 case DEVICE_LV07:
+                case DEVICE_LV08:
                     EMC2302_set_fan_speed(0,(float) fs / 100);
                     EMC2302_set_fan_speed(1,(float) fs / 100);
 
