@@ -34,6 +34,7 @@
 #define SUPRA_POWER_OFFSET 5
 #define GAMMA_POWER_OFFSET 5
 #define LV07_POWER_OFFSET 6
+#define LV08_POWER_OFFSET 6
 
 static const char * TAG = "power_management";
 
@@ -76,6 +77,7 @@ static double automatic_fan_speed(float chip_temp, GlobalState * GLOBAL_STATE)
             EMC2101_set_fan_speed( perc );
             break;
         case DEVICE_LV07:
+        case DEVICE_LV08:
             EMC2302_set_fan_speed(0,perc);
             EMC2302_set_fan_speed(1,perc);
             break;
@@ -171,6 +173,14 @@ void POWER_MANAGEMENT_task(void * pvParameters)
                     // The power reading from the TPS546 is only it's output power. So the rest of the Bitaxe power is not accounted for.
                     power_management->power += LV07_POWER_OFFSET; // Add offset for the rest of the Bitaxe power. TODO: this better.
                     power_management->fan_rpm = EMC2302_get_fan_speed(0);
+            case DEVICE_LV08:
+                    power_management->voltage = TPS546_get_vin() * 1000;
+                    power_management->current = TPS546_get_iout() * 1000;
+                    // calculate regulator power (in milliwatts)
+                    power_management->power = (TPS546_get_vout() * power_management->current) / 1000;
+                    // The power reading from the TPS546 is only it's output power. So the rest of the Bitaxe power is not accounted for.
+                    power_management->power += LV08_POWER_OFFSET; // Add offset for the rest of the Bitaxe power. TODO: this better.
+                    power_management->fan_rpm = EMC2302_get_fan_speed(0);
                 break;
             default:
         }
@@ -260,6 +270,7 @@ void POWER_MANAGEMENT_task(void * pvParameters)
                 }
                 break;
             case DEVICE_LV07:
+            case DEVICE_LV08:
                 power_management->chip_temp_avg = (TMP1075_read_temperature(0)+TMP1075_read_temperature(1))/2+5;
 		power_management->vr_temp = (float)TPS546_get_temperature();
 

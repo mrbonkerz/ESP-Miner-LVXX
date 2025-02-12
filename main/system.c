@@ -113,6 +113,7 @@ void SYSTEM_init_peripherals(GlobalState * GLOBAL_STATE) {
             EMC2101_set_beta_compensation(EMC2101_BETA_11);
             break;
         case DEVICE_LV07:
+        case DEVICE_LV08:
         default:
     }
 
@@ -123,6 +124,7 @@ void SYSTEM_init_peripherals(GlobalState * GLOBAL_STATE) {
         case DEVICE_SUPRA:
         case DEVICE_GAMMA:
         case DEVICE_LV07:
+        case DEVICE_LV08:
             TMP1075_init();
             EMC2302_init(nvs_config_get_u16(NVS_CONFIG_INVERT_FAN_POLARITY, 1));
             break;
@@ -140,6 +142,7 @@ void SYSTEM_init_peripherals(GlobalState * GLOBAL_STATE) {
             break;
         case DEVICE_GAMMA:
         case DEVICE_LV07:
+        case DEVICE_LV08:
             break;
         default:
     }
@@ -159,6 +162,7 @@ void SYSTEM_init_peripherals(GlobalState * GLOBAL_STATE) {
         case DEVICE_SUPRA:
         case DEVICE_GAMMA:
         case DEVICE_LV07:
+        case DEVICE_LV08:
             // display
             if (display_init(GLOBAL_STATE) != ESP_OK || !GLOBAL_STATE->SYSTEM_MODULE.is_screen_active) {
                 ESP_LOGW(TAG, "OLED init failed!");
