@@ -339,7 +339,8 @@ static uint16_t float_2_ulinear16(float value)
     return result;
 }
 
-/*--- Public TPS546 functio
+/*--- Public TPS546 functions ---*/
+
 /**
  * @brief Set up the TPS546 regulator and turn it on
 */
