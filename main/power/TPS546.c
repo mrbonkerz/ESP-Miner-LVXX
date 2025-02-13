@@ -339,17 +339,23 @@ esp_err_t TPS546_init_func(TPS546_CONFIG config)
         case DEVICE_GAMMA:
         case DEVICE_GAMMATURBO:
         case DEVICE_LV07:
-            esp_err_t TPS546_init_func(config, TPS546_I2CADDR);
+            TPS546_init_func(config, TPS546_I2CADDR);
             break;
         case DEVICE_LV08:
-            esp_err_t TPS546_init_func(config, TPS546_I2CADDR);
-            esp_err_t TPS546_init_func(config, TPS546_I2CADDR_LV08_1);
-            esp_err_t TPS546_init_func(config, TPS546_I2CADDR_LV08_2);
+            ESP_LOGI(TAG, "Initializing the core voltage regulator 1");
+            TPS546_init_func(config, TPS546_I2CADDR);
+            ESP_LOGI(TAG, "Initializing the core voltage regulator 2");
+            TPS546_init_func(config, TPS546_I2CADDR_LV08_1);
+            ESP_LOGI(TAG, "Initializing the core voltage regulator 3");
+            TPS546_init_func(config, TPS546_I2CADDR_LV08_2);
             break;
         default:
     }
 }
 
+/**
+ * @brief Set up the TPS546 regulator and turn it on
+*/
 esp_err_t TPS546_init_func(TPS546_CONFIG config, uint8_t I2CADDR)
 {
     uint8_t data[7];
@@ -365,7 +371,7 @@ esp_err_t TPS546_init_func(TPS546_CONFIG config, uint8_t I2CADDR)
     ESP_LOGI(TAG, "Initializing the core voltage regulator");
     
     if (i2c_bitaxe_add_device(I2CADDR, &tps546_dev_handle, TAG) != ESP_OK) {
-        ESP_LOG(TAG, "Failed to add I2C device");
+        ESP_LOGE(TAG, "Failed to add I2C device");
         return ESP_FAIL;
     }
 
