@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        build_type: ["lv07, "lv08"]
+        build_type: ["lv07", "lv08"]
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
