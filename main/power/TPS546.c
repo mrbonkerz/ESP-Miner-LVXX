@@ -47,7 +47,10 @@ static TPS546_CONFIG tps546_config;
  */
 static esp_err_t smb_read_byte(uint8_t command, uint8_t *data)
 {
-    return i2c_bitaxe_register_read(tps546_dev_handle_0, command, data, 1);
+    if (i2c_bitaxe_register_read(tps546_dev_handle_0, command, data, 1) != ESP_OK || i2c_bitaxe_register_read(tps546_dev_handle_1, command, data, 1) != ESP_OK || i2c_bitaxe_register_read(tps546_dev_handle_2, command, data, 1) != ESP_OK) {
+        return ESP_FAIL;
+    }
+    return ESP_OK;
 }
 
 /**
@@ -57,7 +60,10 @@ static esp_err_t smb_read_byte(uint8_t command, uint8_t *data)
  */
 static esp_err_t smb_write_byte(uint8_t command, uint8_t data)
 {
-    return i2c_bitaxe_register_write_byte(tps546_dev_handle_0, command, data);
+    if (i2c_bitaxe_register_write_byte(tps546_dev_handle_0, command, data) != ESP_OK || i2c_bitaxe_register_write_byte(tps546_dev_handle_1, command, data) != ESP_OK || i2c_bitaxe_register_write_byte(tps546_dev_handle_2, command, data) != ESP_OK) {
+        return ESP_FAIL;
+    }
+    return ESP_OK;
 }
 
 /**
@@ -66,7 +72,10 @@ static esp_err_t smb_write_byte(uint8_t command, uint8_t data)
  */
 static esp_err_t smb_write_addr(uint8_t command)
 {
-    return i2c_bitaxe_register_write_addr(tps546_dev_handle_0, command);
+    if (i2c_bitaxe_register_write_addr(tps546_dev_handle_0, command) != ESP_OK || i2c_bitaxe_register_write_addr(tps546_dev_handle_1, command)!= ESP_OK || i2c_bitaxe_register_write_addr(tps546_dev_handle_2, command) != ESP_OK) {
+        return ESP_FAIL;
+    }
+    return ESP_OK;
 }
 
 /**
@@ -77,7 +86,7 @@ static esp_err_t smb_write_addr(uint8_t command)
 static esp_err_t smb_read_word(uint8_t command, uint16_t *result)
 {
     uint8_t data[2];
-    if (i2c_bitaxe_register_read(tps546_dev_handle_0, command, data, 2) != ESP_OK) {
+    if (i2c_bitaxe_register_read(tps546_dev_handle_0, command, data, 2) != ESP_OK || i2c_bitaxe_register_read(tps546_dev_handle_1, command, data, 2) != ESP_OK || i2c_bitaxe_register_read(tps546_dev_handle_2, command, data, 2) != ESP_OK) {
         return ESP_FAIL;
     } else {
         *result = (data[1] << 8) + data[0];
@@ -92,7 +101,10 @@ static esp_err_t smb_read_word(uint8_t command, uint16_t *result)
  */
 static esp_err_t smb_write_word(uint8_t command, uint16_t data)
 {
-    return i2c_bitaxe_register_write_word(tps546_dev_handle_0, command, data);
+    if (i2c_bitaxe_register_write_word(tps546_dev_handle_0, command, data) || i2c_bitaxe_register_write_word(tps546_dev_handle_1, command, data) || i2c_bitaxe_register_write_word(tps546_dev_handle_2, command, data)) {
+        return ESP_FAIL;
+    }
+    return ESP_OK;
 }
 
 /**
@@ -105,7 +117,7 @@ static esp_err_t smb_read_block(uint8_t command, uint8_t *data, uint8_t len)
 {
     //malloc a buffer len+1 to store the length byte
     uint8_t *buf = (uint8_t *)malloc(len+1);
-    if (i2c_bitaxe_register_read(tps546_dev_handle_0, command, buf, len+1) != ESP_OK) {
+    if (i2c_bitaxe_register_read(tps546_dev_handle_0, command, buf, len+1) != ESP_OK || i2c_bitaxe_register_read(tps546_dev_handle_1, command, buf, len+1) != ESP_OK || i2c_bitaxe_register_read(tps546_dev_handle_2, command, buf, len+1) != ESP_OK) {
         free(buf);
         return ESP_FAIL;
     }
@@ -132,7 +144,7 @@ static esp_err_t smb_write_block(uint8_t command, uint8_t *data, uint8_t len)
     memcpy(buf+2, data, len);
 
     //write it all
-    if (i2c_bitaxe_register_write_bytes(tps546_dev_handle_0, buf, len+2) != ESP_OK) {
+    if (i2c_bitaxe_register_write_bytes(tps546_dev_handle_0, buf, len+2) != ESP_OK || i2c_bitaxe_register_write_bytes(tps546_dev_handle_1, buf, len+2) != ESP_OK || i2c_bitaxe_register_write_bytes(tps546_dev_handle_2, buf, len+2) != ESP_OK) {
         free(buf);
         return ESP_FAIL;
     } else {
@@ -334,20 +346,26 @@ static uint16_t float_2_ulinear16(float value)
 */
 esp_err_t TPS546_init(TPS546_CONFIG config, int lv08)
 {
-    ESP_LOGI(TAG, "Initializing the core voltage regulator 0");
-    if (TPS546_init_main(config, TPS546_I2CADDR) != ESP_OK) {
-        return ESP_FAIL;
-    }
     if (lv08 == 1)
-    {
+    {    
+        ESP_LOGI(TAG, "Initializing the core voltage regulator 0");
+        if (TPS546_init_main(config, TPS546_I2CADDR, lv08) != ESP_OK) {
+            return ESP_FAIL;
+        }
         ESP_LOGI(TAG, "Initializing the core voltage regulator 1");
-        if (TPS546_init_main(config, TPS546_I2CADDR_LV08_1) != ESP_OK){
+        if (TPS546_init_main(config, TPS546_I2CADDR_LV08_1, lv08) != ESP_OK){
             return ESP_FAIL;
         } 
         ESP_LOGI(TAG, "Initializing the core voltage regulator 2");
-        if (TPS546_init_main(config, TPS546_I2CADDR_LV08_2) != ESP_OK){
+        if (TPS546_init_main(config, TPS546_I2CADDR_LV08_2, lv08) != ESP_OK){
             return ESP_FAIL;
         } 
+    }
+    else {
+        ESP_LOGI(TAG, "Initializing the core voltage regulator 0");
+        if (TPS546_init_main(config, TPS546_I2CADDR, lv08) != ESP_OK) {
+            return ESP_FAIL;
+        }
     }
     return ESP_OK;
 }
@@ -355,7 +373,7 @@ esp_err_t TPS546_init(TPS546_CONFIG config, int lv08)
 /**
  * @brief Set up the TPS546 regulator and turn it on
 */
-esp_err_t TPS546_init_main(TPS546_CONFIG config, uint8_t I2CADDR)
+esp_err_t TPS546_init_main(TPS546_CONFIG config, uint8_t I2CADDR, int lv08)
 {
     uint8_t data[7];
     uint8_t u8_value;
@@ -368,10 +386,18 @@ esp_err_t TPS546_init_main(TPS546_CONFIG config, uint8_t I2CADDR)
     tps546_config = config;
 
     ESP_LOGI(TAG, "Initializing the core voltage regulator");
-    
-    if (i2c_bitaxe_add_device(I2CADDR, &tps546_dev_handle_0, TAG) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to add I2C device");
-        return ESP_FAIL;
+
+    if (lv08 == 1) {
+        if (i2c_bitaxe_add_device(I2CADDR, &tps546_dev_handle_0, TAG) != ESP_OK || i2c_bitaxe_add_device(I2CADDR, &tps546_dev_handle_1, TAG) != ESP_OK || i2c_bitaxe_add_device(I2CADDR, &tps546_dev_handle_2, TAG) != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to add I2C device");
+            return ESP_FAIL;
+        }
+    }
+    else {
+        if (i2c_bitaxe_add_device(I2CADDR, &tps546_dev_handle_0, TAG) != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to add I2C device");
+            return ESP_FAIL;
+        }
     }
 
     /* Establish communication with regulator */
