@@ -19,6 +19,9 @@ esp_err_t Thermal_init(DeviceModel device_model, bool polarity) {
         case DEVICE_GAMMATURBO:
             EMC2103_init(polarity);
             break;
+        case DEVICE_LV07:
+            EMC2302_init(polarity);
+            break;    
         default:
     }
     return ESP_OK;
@@ -38,6 +41,10 @@ esp_err_t Thermal_set_fan_percent(DeviceModel device_model, float percent) {
         case DEVICE_GAMMATURBO:
             EMC2103_set_fan_speed(percent);
             break;
+        case DEVICE_LV07:
+        EMC2302_set_fan_speed(0, percent);
+        EMC2302_set_fan_speed(1, percent);
+            break;
         default:
     }
     return ESP_OK;
@@ -52,6 +59,8 @@ uint16_t Thermal_get_fan_speed(DeviceModel device_model) {
             return EMC2101_get_fan_speed();
         case DEVICE_GAMMATURBO:
             return EMC2103_get_fan_speed();
+        case DEVICE_LV07:
+            return EMC2302_get_fan_speed(0);
         default:
     }
     return 0;
@@ -76,6 +85,8 @@ float Thermal_get_chip_temp(GlobalState * GLOBAL_STATE) {
             return EMC2101_get_external_temp();
         case DEVICE_GAMMATURBO:
             return EMC2103_get_external_temp();
+        case DEVICE_LV07:
+            return TMP1075_read_temperature(0)+TMP1075_read_temperature(1))/2;
         default:
     }
 

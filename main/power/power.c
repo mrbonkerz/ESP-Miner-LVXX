@@ -26,6 +26,7 @@ esp_err_t Power_disable(GlobalState * GLOBAL_STATE) {
             break;
         case DEVICE_GAMMA:
         case DEVICE_GAMMATURBO:
+        case DEVICE_LV07:
             // Turn off core voltage
             VCORE_set_voltage(0.0, GLOBAL_STATE);
             break;
@@ -58,6 +59,7 @@ float Power_get_power(GlobalState * GLOBAL_STATE) {
             break;
         case DEVICE_GAMMA:
         case DEVICE_GAMMATURBO:
+        case DEVICE_LV07:
                 current = TPS546_get_iout() * 1000.0;
                 // calculate regulator power (in milliwatts)
                 power = (TPS546_get_vout() * current) / 1000.0;
@@ -88,6 +90,7 @@ float Power_get_input_voltage(GlobalState * GLOBAL_STATE) {
             break;
         case DEVICE_GAMMA:
         case DEVICE_GAMMATURBO:
+        case DEVICE_LV07:
                 return TPS546_get_vin() * 1000.0;
             break;
         default:
@@ -113,6 +116,7 @@ float Power_get_vreg_temp(GlobalState * GLOBAL_STATE) {
             break;
         case DEVICE_GAMMA:
         case DEVICE_GAMMATURBO:
+        case DEVICE_LV07:
                 return TPS546_get_temperature();
             break;
         default:

@@ -10,6 +10,7 @@
 #define BITAXE_SUPRA_ASIC_COUNT 1
 #define BITAXE_GAMMA_ASIC_COUNT 1
 #define BITAXE_GAMMATURBO_ASIC_COUNT 2
+#define BITAXE_LV07_ASIC_COUNT 2
 
 uint8_t ASIC_init(GlobalState * GLOBAL_STATE);
 uint8_t ASIC_get_asic_count(GlobalState * GLOBAL_STATE);
