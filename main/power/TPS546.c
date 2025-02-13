@@ -34,7 +34,9 @@ static uint8_t MFR_REVISION[] = {0x00, 0x00, 0x01};
 
 //static uint8_t COMPENSATION_CONFIG[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 
-static i2c_master_dev_handle_t tps546_dev_handle;
+static i2c_master_dev_handle_t tps546_dev_handle_0;
+static i2c_master_dev_handle_t tps546_dev_handle_1;
+static i2c_master_dev_handle_t tps546_dev_handle_2;
 
 static TPS546_CONFIG tps546_config;
 
@@ -45,7 +47,14 @@ static TPS546_CONFIG tps546_config;
  */
 static esp_err_t smb_read_byte(uint8_t command, uint8_t *data)
 {
-    return i2c_bitaxe_register_read(tps546_dev_handle, command, data, 1);
+    if (i2c_bitaxe_register_read(tps546_dev_handle_0, command, data, 1) != ESP_OK) {
+        if (i2c_bitaxe_register_read(tps546_dev_handle_1, command, data, 1) != ESP_OK || i2c_bitaxe_register_read(tps546_dev_handle_2, command, data, 1) != ESP_OK) {
+            //LV08
+        }
+
+        return ESP_FAIL;
+    }
+    return ESP_OK;
 }
 
 /**
@@ -55,7 +64,14 @@ static esp_err_t smb_read_byte(uint8_t command, uint8_t *data)
  */
 static esp_err_t smb_write_byte(uint8_t command, uint8_t data)
 {
-    return i2c_bitaxe_register_write_byte(tps546_dev_handle, command, data);
+    if (i2c_bitaxe_register_write_byte(tps546_dev_handle_0, command, data) != ESP_OK) {
+        if (i2c_bitaxe_register_write_byte(tps546_dev_handle_1, command, data) != ESP_OK || i2c_bitaxe_register_write_byte(tps546_dev_handle_2, command, data) != ESP_OK) {
+            //LV08
+        }
+
+        return ESP_FAIL;
+    }
+    return ESP_OK;
 }
 
 /**
@@ -64,7 +80,14 @@ static esp_err_t smb_write_byte(uint8_t command, uint8_t data)
  */
 static esp_err_t smb_write_addr(uint8_t command)
 {
-    return i2c_bitaxe_register_write_addr(tps546_dev_handle, command);
+    if (i2c_bitaxe_register_write_addr(tps546_dev_handle_0, command) != ESP_OK) {
+        if (i2c_bitaxe_register_write_addr(tps546_dev_handle_1, command)!= ESP_OK || i2c_bitaxe_register_write_addr(tps546_dev_handle_2, command) != ESP_OK) {
+            //LV08
+        }
+
+        return ESP_FAIL;
+    }
+    return ESP_OK;
 }
 
 /**
@@ -75,7 +98,11 @@ static esp_err_t smb_write_addr(uint8_t command)
 static esp_err_t smb_read_word(uint8_t command, uint16_t *result)
 {
     uint8_t data[2];
-    if (i2c_bitaxe_register_read(tps546_dev_handle, command, data, 2) != ESP_OK) {
+    if (i2c_bitaxe_register_read(tps546_dev_handle_0, command, data, 2) != ESP_OK) {
+        if (i2c_bitaxe_register_read(tps546_dev_handle_1, command, data, 2) != ESP_OK || i2c_bitaxe_register_read(tps546_dev_handle_2, command, data, 2) != ESP_OK) {
+            //LV08
+        }
+
         return ESP_FAIL;
     } else {
         *result = (data[1] << 8) + data[0];
@@ -90,7 +117,14 @@ static esp_err_t smb_read_word(uint8_t command, uint16_t *result)
  */
 static esp_err_t smb_write_word(uint8_t command, uint16_t data)
 {
-    return i2c_bitaxe_register_write_word(tps546_dev_handle, command, data);
+    if (i2c_bitaxe_register_write_word(tps546_dev_handle_0, command, data)) {
+        if (i2c_bitaxe_register_write_word(tps546_dev_handle_1, command, data) || i2c_bitaxe_register_write_word(tps546_dev_handle_2, command, data)) {
+            //LV08
+        }
+
+        return ESP_FAIL;
+    }
+    return ESP_OK;
 }
 
 /**
@@ -103,7 +137,11 @@ static esp_err_t smb_read_block(uint8_t command, uint8_t *data, uint8_t len)
 {
     //malloc a buffer len+1 to store the length byte
     uint8_t *buf = (uint8_t *)malloc(len+1);
-    if (i2c_bitaxe_register_read(tps546_dev_handle, command, buf, len+1) != ESP_OK) {
+    if (i2c_bitaxe_register_read(tps546_dev_handle_0, command, buf, len+1) != ESP_OK) {
+        if (i2c_bitaxe_register_read(tps546_dev_handle_1, command, buf, len+1) != ESP_OK || i2c_bitaxe_register_read(tps546_dev_handle_2, command, buf, len+1) != ESP_OK) {
+            //LV08
+        }
+
         free(buf);
         return ESP_FAIL;
     }
@@ -130,7 +168,11 @@ static esp_err_t smb_write_block(uint8_t command, uint8_t *data, uint8_t len)
     memcpy(buf+2, data, len);
 
     //write it all
-    if (i2c_bitaxe_register_write_bytes(tps546_dev_handle, buf, len+2) != ESP_OK) {
+    if (i2c_bitaxe_register_write_bytes(tps546_dev_handle_0, buf, len+2) != ESP_OK) {
+        if (i2c_bitaxe_register_write_bytes(tps546_dev_handle_1, buf, len+2) != ESP_OK || i2c_bitaxe_register_write_bytes(tps546_dev_handle_2, buf, len+2) != ESP_OK) {
+            //LV08
+        }
+
         free(buf);
         return ESP_FAIL;
     } else {
@@ -332,7 +374,7 @@ static uint16_t float_2_ulinear16(float value)
 */
 esp_err_t TPS546_init(TPS546_CONFIG config)
 {
-	uint8_t data[7];
+    uint8_t data[7];
     uint8_t u8_value;
     uint16_t u16_value;
     uint8_t read_mfr_revision[4];
@@ -343,8 +385,12 @@ esp_err_t TPS546_init(TPS546_CONFIG config)
     tps546_config = config;
 
     ESP_LOGI(TAG, "Initializing the core voltage regulator");
+    
+    if (i2c_bitaxe_add_device(TPS546_I2CADDR_0, &tps546_dev_handle_0, TAG) != ESP_OK) {
+        if (i2c_bitaxe_add_device(TPS546_I2CADDR_1, &tps546_dev_handle_1, TAG) != ESP_OK || i2c_bitaxe_add_device(TPS546_I2CADDR_2, &tps546_dev_handle_2, TAG) != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to add additional I2C device"); //LV08
+        }
 
-    if (i2c_bitaxe_add_device(TPS546_I2CADDR, &tps546_dev_handle, TAG) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to add I2C device");
         return ESP_FAIL;
     }

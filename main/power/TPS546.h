@@ -4,7 +4,9 @@
 #include <stdint.h>
 #include <esp_err.h>
 
-#define TPS546_I2CADDR         0x24  //< TPS546 i2c address
+#define TPS546_I2CADDR_0         0x24  //< TPS546 i2c address
+#define TPS546_I2CADDR_1         0x7F  //< TPS546 i2c address
+#define TPS546_I2CADDR_2         0x14  //< TPS546 i2c address
 #define TPS546_MANUFACTURER_ID 0xFE  //< Manufacturer ID
 #define TPS546_REVISION        0xFF  //< Chip revision
 

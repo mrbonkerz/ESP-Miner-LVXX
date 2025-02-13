@@ -28,6 +28,7 @@ esp_err_t Power_disable(GlobalState * GLOBAL_STATE) {
         case DEVICE_GAMMA:
         case DEVICE_GAMMATURBO:
         case DEVICE_LV07:
+        case DEVICE_LV08:
             // Turn off core voltage
             VCORE_set_voltage(0.0, GLOBAL_STATE);
             break;
@@ -67,6 +68,13 @@ float Power_get_power(GlobalState * GLOBAL_STATE) {
                 // The power reading from the TPS546 is only it's output power. So the rest of the Bitaxe power is not accounted for.
                 power += LV07_POWER_OFFSET; // Add offset for the rest of the Bitaxe power. TODO: this better.
             break;
+        case DEVICE_LV08:
+                current = TPS546_get_iout() * 1000.0;
+                // calculate regulator power (in milliwatts)
+                power = (TPS546_get_vout() * 3 * current) / 1000.0;
+                // The power reading from the TPS546 is only it's output power. So the rest of the Bitaxe power is not accounted for.
+                power += LV07_POWER_OFFSET; // Add offset for the rest of the Bitaxe power. TODO: this better.
+            break;
         default:
     }
 
@@ -92,6 +100,7 @@ float Power_get_input_voltage(GlobalState * GLOBAL_STATE) {
         case DEVICE_GAMMA:
         case DEVICE_GAMMATURBO:
         case DEVICE_LV07:
+        case DEVICE_LV08:
                 return TPS546_get_vin() * 1000.0;
             break;
         default:
@@ -118,6 +127,7 @@ float Power_get_vreg_temp(GlobalState * GLOBAL_STATE) {
         case DEVICE_GAMMA:
         case DEVICE_GAMMATURBO:
         case DEVICE_LV07:
+        case DEVICE_LV08:
                 return TPS546_get_temperature();
             break;
         default:
