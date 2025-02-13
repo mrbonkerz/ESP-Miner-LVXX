@@ -20,6 +20,7 @@ esp_err_t Thermal_init(DeviceModel device_model, bool polarity) {
             EMC2103_init(polarity);
             break;
         case DEVICE_LV07:
+            TMP1075_init();
             EMC2302_init(polarity);
             break;    
         default:
