@@ -344,10 +344,11 @@ esp_err_t TPS546_init(TPS546_CONFIG config)
 
     ESP_LOGI(TAG, "Initializing the core voltage regulator");
 
-    if (i2c_bitaxe_add_device(PS546_I2CADDR_LV08_1, &tps546_dev_handle, TAG) != ESP_OK || i2c_bitaxe_add_device(PS546_I2CADDR_LV08_2, &tps546_dev_handle, TAG) != ESP_OK) {
+    if (i2c_bitaxe_add_device(TPS546_I2CADDR_LV08_1, &tps546_dev_handle, TAG) != ESP_OK || i2c_bitaxe_add_device(TPS546_I2CADDR_LV08_2, &tps546_dev_handle, TAG) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to add I2C device LV08 only");
     }
-    else if (i2c_bitaxe_add_device(TPS546_I2CADDR, &tps546_dev_handle, TAG) != ESP_OK) {
+    
+    if (i2c_bitaxe_add_device(TPS546_I2CADDR, &tps546_dev_handle, TAG) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to add I2C device");
         return ESP_FAIL;
     }
