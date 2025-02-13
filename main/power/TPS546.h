@@ -111,6 +111,7 @@ typedef struct
 
 /* public functions */
 esp_err_t TPS546_init(TPS546_CONFIG config, int lv08);
+esp_err_t TPS546_init_main(TPS546_CONFIG config, uint8_t I2CADDR);
 void TPS546_read_mfr_info(uint8_t *);
 void TPS546_set_mfr_info(void);
 void TPS546_write_entire_config(void);
