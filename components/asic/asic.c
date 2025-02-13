@@ -28,6 +28,8 @@ uint8_t ASIC_init(GlobalState * GLOBAL_STATE) {
             return BM1370_init(GLOBAL_STATE->POWER_MANAGEMENT_MODULE.frequency_value, BITAXE_GAMMATURBO_ASIC_COUNT);
         case DEVICE_LV07:
             return BM1366_init(GLOBAL_STATE->POWER_MANAGEMENT_MODULE.frequency_value, BITAXE_LV07_ASIC_COUNT);
+        case DEVICE_LV08:
+            return BM1366_init(GLOBAL_STATE->POWER_MANAGEMENT_MODULE.frequency_value, BITAXE_LV08_ASIC_COUNT);
         default:
     }
     return ESP_OK;
@@ -47,6 +49,8 @@ uint8_t ASIC_get_asic_count(GlobalState * GLOBAL_STATE) {
             return BITAXE_GAMMATURBO_ASIC_COUNT;
         case DEVICE_LV07:
             return BITAXE_LV07_ASIC_COUNT;
+        case DEVICE_LV08:
+            return BITAXE_LV08_ASIC_COUNT;
         default:
     }
     return 0;
@@ -65,6 +69,7 @@ uint16_t ASIC_get_small_core_count(GlobalState * GLOBAL_STATE) {
         case DEVICE_GAMMATURBO:
             return BM1370_SMALL_CORE_COUNT;
         case DEVICE_LV07:
+        case DEVICE_LV08:
             return BM1366_SMALL_CORE_COUNT;
         default:
     }
@@ -84,6 +89,7 @@ task_result * ASIC_proccess_work(GlobalState * GLOBAL_STATE) {
         case DEVICE_GAMMATURBO:
             return BM1370_proccess_work(GLOBAL_STATE);
         case DEVICE_LV07:
+        case DEVICE_LV08:
             return BM1366_proccess_work(GLOBAL_STATE);    
         default:
     }
@@ -103,6 +109,7 @@ int ASIC_set_max_baud(GlobalState * GLOBAL_STATE) {
         case DEVICE_GAMMATURBO:
             return BM1370_set_max_baud();
         case DEVICE_LV07:
+        case DEVICE_LV08:
             return BM1366_set_max_baud();
         default:
     return 0;
@@ -126,6 +133,7 @@ void ASIC_set_job_difficulty_mask(GlobalState * GLOBAL_STATE, uint8_t mask) {
             BM1370_set_job_difficulty_mask(mask);
             break;
         case DEVICE_LV07:
+        case DEVICE_LV08:
             BM1366_set_job_difficulty_mask(mask);
             break;
         default:
@@ -149,6 +157,7 @@ void ASIC_send_work(GlobalState * GLOBAL_STATE, void * next_job) {
             BM1370_send_work(GLOBAL_STATE, next_job);
             break;
         case DEVICE_LV07:
+        case DEVICE_LV08:
             BM1366_send_work(GLOBAL_STATE, next_job);
             break;
         default:
@@ -173,6 +182,7 @@ void ASIC_set_version_mask(GlobalState * GLOBAL_STATE, uint32_t mask) {
             BM1370_set_version_mask(mask);
             break;
         case DEVICE_LV07:
+        case DEVICE_LV08:
             BM1366_set_version_mask(mask);
             break;
         default:
@@ -241,6 +251,16 @@ esp_err_t ASIC_set_device_model(GlobalState * GLOBAL_STATE) {
         ESP_LOGI(TAG, "DEVICE: lv07");
         ESP_LOGI(TAG, "ASIC: %dx BM1366 (%" PRIu64 " cores)", BITAXE_LV07_ASIC_COUNT, BM1366_CORE_COUNT);
         GLOBAL_STATE->device_model = DEVICE_LV07;
+
+    } else if (strcmp(GLOBAL_STATE->device_model_str, "lv08") == 0) {
+        GLOBAL_STATE->asic_model = ASIC_BM1366;
+        GLOBAL_STATE->valid_model = true;
+        //GLOBAL_STATE.asic_job_frequency_ms = (NONCE_SPACE / (double) (GLOBAL_STATE.POWER_MANAGEMENT_MODULE.frequency_value * BM1366_CORE_COUNT * 1000)) / (double) BITAXE_ULTRA_ASIC_COUNT; // version-rolling so Small Cores have different Nonce Space
+        GLOBAL_STATE->asic_job_frequency_ms = 2000; //ms
+        GLOBAL_STATE->ASIC_difficulty = BM1366_ASIC_DIFFICULTY;
+        ESP_LOGI(TAG, "DEVICE: lv08");
+        ESP_LOGI(TAG, "ASIC: %dx BM1366 (%" PRIu64 " cores)", BITAXE_LV08_ASIC_COUNT, BM1366_CORE_COUNT);
+        GLOBAL_STATE->device_model = DEVICE_LV08;
 
     } else {
         ESP_LOGE(TAG, "Invalid DEVICE model");

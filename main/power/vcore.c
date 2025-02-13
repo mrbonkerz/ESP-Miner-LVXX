@@ -84,6 +84,7 @@ esp_err_t VCORE_init(GlobalState * GLOBAL_STATE) {
             ESP_RETURN_ON_ERROR(TPS546_init(TPS546_CONFIG_GAMMATURBO), TAG, "TPS546 init failed!");
             break;
         case DEVICE_LV07:
+        case DEVICE_LV08:
             ESP_RETURN_ON_ERROR(TPS546_init(TPS546_CONFIG_LV07), TAG, "TPS546 init failed!");
             break;
         // case DEVICE_HEX:
@@ -117,6 +118,7 @@ esp_err_t VCORE_init(GlobalState * GLOBAL_STATE) {
         case DEVICE_GAMMA:
         case DEVICE_GAMMATURBO:
         case DEVICE_LV07:
+        case DEVICE_LV08:
             break;
         default:
     }
@@ -141,6 +143,7 @@ esp_err_t VCORE_set_voltage(float core_voltage, GlobalState * global_state)
         case DEVICE_GAMMA:
         case DEVICE_GAMMATURBO:
         case DEVICE_LV07:
+        case DEVICE_LV08:
                 ESP_LOGI(TAG, "Set ASIC voltage = %.3fV", core_voltage);
                 ESP_RETURN_ON_ERROR(TPS546_set_vout(core_voltage), TAG, "TPS546 set voltage failed!");
             break;
@@ -161,6 +164,7 @@ int16_t VCORE_get_voltage_mv(GlobalState * global_state) {
         case DEVICE_GAMMATURBO:
             return ADC_get_vcore();
         case DEVICE_LV07:
+        case DEVICE_LV08:
             return (TPS546_get_vout() * 1000);
         // case DEVICE_HEX:
         default:
