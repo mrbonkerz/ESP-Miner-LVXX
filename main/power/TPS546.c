@@ -51,7 +51,7 @@ static esp_err_t smb_read_byte(uint8_t command, uint8_t *data)
         if (i2c_bitaxe_register_read(tps546_dev_handle_1, command, data, 1) != ESP_OK || i2c_bitaxe_register_read(tps546_dev_handle_2, command, data, 1) != ESP_OK) {
             //LV08
         }
-        
+
         return ESP_FAIL;
     }
     return ESP_OK;
@@ -387,7 +387,7 @@ esp_err_t TPS546_init(TPS546_CONFIG config)
     ESP_LOGI(TAG, "Initializing the core voltage regulator");
     
     if (i2c_bitaxe_add_device(TPS546_I2CADDR_0, &tps546_dev_handle_0, TAG) != ESP_OK) {
-        if (i2c_bitaxe_add_device(TPS546_I2CADDR_1, &tps546_dev_handle_1, TAG) != ESP_OK || i2c_bitaxe_add_device(TPS546_I2CADDR_2, &tps546_dev_handle_2, TAG) != ESP_OK){
+        if (i2c_bitaxe_add_device(TPS546_I2CADDR_1, &tps546_dev_handle_1, TAG) != ESP_OK || i2c_bitaxe_add_device(TPS546_I2CADDR_2, &tps546_dev_handle_2, TAG) != ESP_OK) {
             ESP_LOGE(TAG, "Failed to add additional I2C device"); //LV08
         }
 
