@@ -349,6 +349,7 @@ esp_err_t TPS546_init(TPS546_CONFIG config, int lv08)
             return ESP_FAIL;
         } 
     }
+    return ESP_OK;
 }
 
 /**
