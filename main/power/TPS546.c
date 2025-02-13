@@ -332,25 +332,12 @@ static uint16_t float_2_ulinear16(float value)
 */
 esp_err_t TPS546_init_func(TPS546_CONFIG config)
 {
-    switch (GLOBAL_STATE->device_model) {
-        case DEVICE_MAX:
-        case DEVICE_ULTRA:
-        case DEVICE_SUPRA:
-        case DEVICE_GAMMA:
-        case DEVICE_GAMMATURBO:
-        case DEVICE_LV07:
-            TPS546_init_func(config, TPS546_I2CADDR);
-            break;
-        case DEVICE_LV08:
             ESP_LOGI(TAG, "Initializing the core voltage regulator 1");
             TPS546_init_func(config, TPS546_I2CADDR);
             ESP_LOGI(TAG, "Initializing the core voltage regulator 2");
             TPS546_init_func(config, TPS546_I2CADDR_LV08_1);
             ESP_LOGI(TAG, "Initializing the core voltage regulator 3");
             TPS546_init_func(config, TPS546_I2CADDR_LV08_2);
-            break;
-        default:
-    }
 }
 
 /**
