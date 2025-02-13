@@ -110,7 +110,7 @@ typedef struct
 
 
 /* public functions */
-esp_err_t TPS546_init(TPS546_CONFIG config, bool lv08);
+esp_err_t TPS546_init(TPS546_CONFIG config, int lv08);
 void TPS546_read_mfr_info(uint8_t *);
 void TPS546_set_mfr_info(void);
 void TPS546_write_entire_config(void);

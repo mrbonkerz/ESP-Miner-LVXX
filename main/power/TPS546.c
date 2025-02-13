@@ -332,11 +332,11 @@ static uint16_t float_2_ulinear16(float value)
 /**
  * @brief Set up the TPS546 regulator and turn it on
 */
-esp_err_t TPS546_init(TPS546_CONFIG config, bool lv08)
+esp_err_t TPS546_init(TPS546_CONFIG config, int lv08)
 {
     ESP_LOGI(TAG, "Initializing the core voltage regulator 0");
     TPS546_init_main(config, TPS546_I2CADDR);
-    if (lv08)
+    if (lv08 == 1)
     {
         ESP_LOGI(TAG, "Initializing the core voltage regulator 1");
         TPS546_init_main(config, TPS546_I2CADDR_LV08_1);
