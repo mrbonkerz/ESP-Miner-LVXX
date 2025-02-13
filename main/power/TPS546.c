@@ -339,41 +339,11 @@ static uint16_t float_2_ulinear16(float value)
     return result;
 }
 
-/*--- Public TPS546 functions ---*/
-
+/*--- Public TPS546 functio
 /**
  * @brief Set up the TPS546 regulator and turn it on
 */
 esp_err_t TPS546_init(TPS546_CONFIG config, int lv08)
-{
-    if (lv08 == 1)
-    {    
-        ESP_LOGI(TAG, "Initializing the core voltage regulator 0");
-        if (TPS546_init_main(config, TPS546_I2CADDR, lv08) != ESP_OK) {
-            return ESP_FAIL;
-        }
-        ESP_LOGI(TAG, "Initializing the core voltage regulator 1");
-        if (TPS546_init_main(config, TPS546_I2CADDR_LV08_1, lv08) != ESP_OK){
-            return ESP_FAIL;
-        } 
-        ESP_LOGI(TAG, "Initializing the core voltage regulator 2");
-        if (TPS546_init_main(config, TPS546_I2CADDR_LV08_2, lv08) != ESP_OK){
-            return ESP_FAIL;
-        } 
-    }
-    else {
-        ESP_LOGI(TAG, "Initializing the core voltage regulator 0");
-        if (TPS546_init_main(config, TPS546_I2CADDR, lv08) != ESP_OK) {
-            return ESP_FAIL;
-        }
-    }
-    return ESP_OK;
-}
-
-/**
- * @brief Set up the TPS546 regulator and turn it on
-*/
-esp_err_t TPS546_init_main(TPS546_CONFIG config, uint8_t I2CADDR, int lv08)
 {
     uint8_t data[7];
     uint8_t u8_value;
@@ -388,13 +358,13 @@ esp_err_t TPS546_init_main(TPS546_CONFIG config, uint8_t I2CADDR, int lv08)
     ESP_LOGI(TAG, "Initializing the core voltage regulator");
 
     if (lv08 == 1) {
-        if (i2c_bitaxe_add_device(I2CADDR, &tps546_dev_handle_0, TAG) != ESP_OK || i2c_bitaxe_add_device(I2CADDR, &tps546_dev_handle_1, TAG) != ESP_OK || i2c_bitaxe_add_device(I2CADDR, &tps546_dev_handle_2, TAG) != ESP_OK) {
+        if (i2c_bitaxe_add_device(TPS546_I2CADDR, &tps546_dev_handle_0, TAG) != ESP_OK || i2c_bitaxe_add_device(TPS546_I2CADDR_LV08_1, &tps546_dev_handle_1, TAG) != ESP_OK || i2c_bitaxe_add_device(TPS546_I2CADDR_LV08_2, &tps546_dev_handle_2, TAG) != ESP_OK) {
             ESP_LOGE(TAG, "Failed to add I2C device");
             return ESP_FAIL;
         }
     }
     else {
-        if (i2c_bitaxe_add_device(I2CADDR, &tps546_dev_handle_0, TAG) != ESP_OK) {
+        if (i2c_bitaxe_add_device(TPS546_I2CADDR, &tps546_dev_handle_0, TAG) != ESP_OK) {
             ESP_LOGE(TAG, "Failed to add I2C device");
             return ESP_FAIL;
         }
