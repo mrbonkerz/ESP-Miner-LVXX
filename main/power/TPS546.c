@@ -335,13 +335,19 @@ static uint16_t float_2_ulinear16(float value)
 esp_err_t TPS546_init(TPS546_CONFIG config, int lv08)
 {
     ESP_LOGI(TAG, "Initializing the core voltage regulator 0");
-    TPS546_init_main(config, TPS546_I2CADDR);
+    if (TPS546_init_main(config, TPS546_I2CADDR) != ESP_OK) {
+        return ESP_FAIL;
+    }
     if (lv08 == 1)
     {
         ESP_LOGI(TAG, "Initializing the core voltage regulator 1");
-        TPS546_init_main(config, TPS546_I2CADDR_LV08_1);
+        if (TPS546_init_main(config, TPS546_I2CADDR_LV08_1) != ESP_OK){
+            return ESP_FAIL;
+        } 
         ESP_LOGI(TAG, "Initializing the core voltage regulator 2");
-        TPS546_init_main(config, TPS546_I2CADDR_LV08_2);
+        if (TPS546_init_main(config, TPS546_I2CADDR_LV08_2) != ESP_OK){
+            return ESP_FAIL;
+        } 
     }
 }
 
