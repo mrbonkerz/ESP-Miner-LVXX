@@ -330,9 +330,29 @@ static uint16_t float_2_ulinear16(float value)
 /**
  * @brief Set up the TPS546 regulator and turn it on
 */
-esp_err_t TPS546_init(TPS546_CONFIG config)
+esp_err_t TPS546_init_func(TPS546_CONFIG config)
 {
-	uint8_t data[7];
+    switch (GLOBAL_STATE->device_model) {
+        case DEVICE_MAX:
+        case DEVICE_ULTRA:
+        case DEVICE_SUPRA:
+        case DEVICE_GAMMA:
+        case DEVICE_GAMMATURBO:
+        case DEVICE_LV07:
+            esp_err_t TPS546_init_func(config, TPS546_I2CADDR);
+            break;
+        case DEVICE_LV08:
+            esp_err_t TPS546_init_func(config, TPS546_I2CADDR);
+            esp_err_t TPS546_init_func(config, TPS546_I2CADDR_LV08_1);
+            esp_err_t TPS546_init_func(config, TPS546_I2CADDR_LV08_2);
+            break;
+        default:
+    }
+}
+
+esp_err_t TPS546_init_func(TPS546_CONFIG config, uint8_t I2CADDR)
+{
+    uint8_t data[7];
     uint8_t u8_value;
     uint16_t u16_value;
     uint8_t read_mfr_revision[4];
@@ -343,13 +363,9 @@ esp_err_t TPS546_init(TPS546_CONFIG config)
     tps546_config = config;
 
     ESP_LOGI(TAG, "Initializing the core voltage regulator");
-
-    if (i2c_bitaxe_add_device(TPS546_I2CADDR_LV08_1, &tps546_dev_handle, TAG) != ESP_OK || i2c_bitaxe_add_device(TPS546_I2CADDR_LV08_2, &tps546_dev_handle, TAG) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to add I2C device LV08 only");
-    }
     
-    if (i2c_bitaxe_add_device(TPS546_I2CADDR, &tps546_dev_handle, TAG) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to add I2C device");
+    if (i2c_bitaxe_add_device(I2CADDR, &tps546_dev_handle, TAG) != ESP_OK) {
+        ESP_LOG(TAG, "Failed to add I2C device");
         return ESP_FAIL;
     }
 
