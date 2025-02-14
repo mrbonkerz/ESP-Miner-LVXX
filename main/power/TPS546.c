@@ -49,7 +49,7 @@ static esp_err_t smb_read_byte(uint8_t command, uint8_t *data)
 {
     if (i2c_bitaxe_register_read(tps546_dev_handle_0, command, data, 1) == ESP_OK) {
         if (i2c_bitaxe_register_read(tps546_dev_handle_1, command, data, 1) != ESP_OK || i2c_bitaxe_register_read(tps546_dev_handle_2, command, data, 1) != ESP_OK) {
-            ESP_LOGI(TAG, "Additional TPS546 not detected");
+            ESP_LOGI(TAG, "Additional I2C not detected");
         }
 
         return ESP_OK;
@@ -66,7 +66,7 @@ static esp_err_t smb_write_byte(uint8_t command, uint8_t data)
 {
     if (i2c_bitaxe_register_write_byte(tps546_dev_handle_0, command, data) == ESP_OK) {
         if (i2c_bitaxe_register_write_byte(tps546_dev_handle_1, command, data) != ESP_OK || i2c_bitaxe_register_write_byte(tps546_dev_handle_2, command, data) != ESP_OK) {
-            ESP_LOGI(TAG, "Additional TPS546 not detected");
+            ESP_LOGI(TAG, "Additional I2C not detected");
         }
 
         return ESP_OK;
@@ -82,7 +82,7 @@ static esp_err_t smb_write_addr(uint8_t command)
 {
     if (i2c_bitaxe_register_write_addr(tps546_dev_handle_0, command) == ESP_OK) {
         if (i2c_bitaxe_register_write_addr(tps546_dev_handle_1, command)!= ESP_OK || i2c_bitaxe_register_write_addr(tps546_dev_handle_2, command) != ESP_OK) {
-            ESP_LOGI(TAG, "Additional TPS546 not detected");
+            ESP_LOGI(TAG, "Additional I2C not detected");
         }
 
         return ESP_OK;
@@ -99,11 +99,18 @@ static esp_err_t smb_read_word(uint8_t command, uint16_t *result)
 {
     uint8_t data[2];
     if (i2c_bitaxe_register_read(tps546_dev_handle_0, command, data, 2) == ESP_OK) {
-        if (i2c_bitaxe_register_read(tps546_dev_handle_1, command, data, 2) != ESP_OK || i2c_bitaxe_register_read(tps546_dev_handle_2, command, data, 2) != ESP_OK) {
-            ESP_LOGI(TAG, "Additional TPS546 not detected");
+        ESP_LOGI(TAG, "TPS546_0: %d", slinear11_2_int((data[1] << 8) + data[0]));
+
+        if (i2c_bitaxe_register_read(tps546_dev_handle_1, command, data, 2) == ESP_OK) {
+            ESP_LOGI(TAG, "TPS546_1: %d", slinear11_2_int((data[1] << 8) + data[0]));
+        }
+        
+        if (i2c_bitaxe_register_read(tps546_dev_handle_2, command, data, 2) == ESP_OK) {
+            ESP_LOGI(TAG, "TPS546_2: %d", slinear11_2_int((data[1] << 8) + data[0]));
         }
 
         *result = (data[1] << 8) + data[0];
+
         return ESP_OK;
     } else {
         return ESP_FAIL;
@@ -119,7 +126,7 @@ static esp_err_t smb_write_word(uint8_t command, uint16_t data)
 {
     if (i2c_bitaxe_register_write_word(tps546_dev_handle_0, command, data) == ESP_OK) {
         if (i2c_bitaxe_register_write_word(tps546_dev_handle_1, command, data) || i2c_bitaxe_register_write_word(tps546_dev_handle_2, command, data)) {
-            ESP_LOGI(TAG, "Additional TPS546 not detected");
+            ESP_LOGI(TAG, "Additional I2C not detected");
         }
 
         return ESP_OK;
@@ -139,7 +146,7 @@ static esp_err_t smb_read_block(uint8_t command, uint8_t *data, uint8_t len)
     uint8_t *buf = (uint8_t *)malloc(len+1);
     if (i2c_bitaxe_register_read(tps546_dev_handle_0, command, buf, len+1) == ESP_OK) {
         if (i2c_bitaxe_register_read(tps546_dev_handle_1, command, buf, len+1) != ESP_OK || i2c_bitaxe_register_read(tps546_dev_handle_2, command, buf, len+1) != ESP_OK) {
-            ESP_LOGI(TAG, "Additional TPS546 not detected");
+            ESP_LOGI(TAG, "Additional I2C not detected");
         }
 
         //copy the data into the buffer
@@ -170,7 +177,7 @@ static esp_err_t smb_write_block(uint8_t command, uint8_t *data, uint8_t len)
     //write it all
     if (i2c_bitaxe_register_write_bytes(tps546_dev_handle_0, buf, len+2) == ESP_OK) {
         if (i2c_bitaxe_register_write_bytes(tps546_dev_handle_1, buf, len+2) != ESP_OK || i2c_bitaxe_register_write_bytes(tps546_dev_handle_2, buf, len+2) != ESP_OK) {
-            ESP_LOGI(TAG, "Additional TPS546 not detected");
+            ESP_LOGI(TAG, "Additional I2C not detected");
         }
 
         free(buf);
@@ -388,7 +395,7 @@ esp_err_t TPS546_init(TPS546_CONFIG config)
     
     if (i2c_bitaxe_add_device(TPS546_I2CADDR_0, &tps546_dev_handle_0, TAG) == ESP_OK) {
         if (i2c_bitaxe_add_device(TPS546_I2CADDR_1, &tps546_dev_handle_1, TAG) != ESP_OK || i2c_bitaxe_add_device(TPS546_I2CADDR_2, &tps546_dev_handle_2, TAG) != ESP_OK) {
-            ESP_LOGI(TAG, "Additional TPS546 not detected");
+            ESP_LOGI(TAG, "Additional I2C not detected");
         }
     }
     else {
