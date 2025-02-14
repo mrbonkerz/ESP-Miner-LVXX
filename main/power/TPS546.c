@@ -99,14 +99,14 @@ static esp_err_t smb_read_word(uint8_t command, uint16_t *result)
 {
     uint8_t data[2];
     if (i2c_bitaxe_register_read(tps546_dev_handle_0, command, data, 2) == ESP_OK) {
-        ESP_LOGI(TAG, "TPS546_0: %i", slinear11_2_int((data[1] << 8) + data[0]));
+        ESP_LOGI(TAG, "TPS546_0: %i", ((data[1] << 8) + data[0]));
 
         if (i2c_bitaxe_register_read(tps546_dev_handle_1, command, data, 2) == ESP_OK) {
-            ESP_LOGI(TAG, "TPS546_1: %i", slinear11_2_int((data[1] << 8) + data[0]));
+            ESP_LOGI(TAG, "TPS546_1: %i", ((data[1] << 8) + data[0]));
         }
         
         if (i2c_bitaxe_register_read(tps546_dev_handle_2, command, data, 2) == ESP_OK) {
-            ESP_LOGI(TAG, "TPS546_2: %i", slinear11_2_int((data[1] << 8) + data[0]));
+            ESP_LOGI(TAG, "TPS546_2: %i", ((data[1] << 8) + data[0]));
         }
 
         *result = (data[1] << 8) + data[0];
