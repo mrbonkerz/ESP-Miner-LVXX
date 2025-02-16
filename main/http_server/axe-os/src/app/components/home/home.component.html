@@ -109,7 +109,7 @@
                             </p-progressBar>
                             <!-- Add marker at 5.0V (90.91% of 5.5V) -->
                             <div class="absolute bg-white" style="left: 90.5%; top: 0; width: 3px; height: 6px;">
-                                <small class="absolute text-white" style="top: -1.25rem; transform: translateX(-50%)">{{info.voltage}}</small>
+                                <small class="absolute text-white" style="top: -1.25rem; transform: translateX(-50%)">{{info.voltage * 0.96}}</small>
                             </div>
                         </div>
                         <span class="danger" *ngIf="info.voltage < 4.8">&nbsp; Danger: Low voltage</span>
