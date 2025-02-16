@@ -130,12 +130,8 @@ float Power_get_vreg_temp(GlobalState * GLOBAL_STATE) {
         case DEVICE_GAMMA:
         case DEVICE_GAMMATURBO:
         case DEVICE_LV07:
-            ESP_LOGI(TAG, "VREG_0 Temp: %i", TPS546_get_temperature(0));
             return TPS546_get_temperature(0);
         case DEVICE_LV08:
-            ESP_LOGI(TAG, "VREG_0 Temp: %i", TPS546_get_temperature(0));
-            ESP_LOGI(TAG, "VREG_1 Temp: %i", TPS546_get_temperature(1));
-            ESP_LOGI(TAG, "VREG_2 Temp: %i", TPS546_get_temperature(2));
             return fmax(fmax(TPS546_get_temperature(0),TPS546_get_temperature(1)),TPS546_get_temperature(2));
             break;
         default:
