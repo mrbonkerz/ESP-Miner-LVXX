@@ -113,7 +113,7 @@ void TPS546_read_mfr_info(uint8_t *, int i2c_addr);
 void TPS546_set_mfr_info(int i2c_addr);
 void TPS546_write_entire_config(int i2c_addr);
 int TPS546_get_frequency(int i2c_addr);
-void TPS546_set_frequency(int i2c_addr);
+void TPS546_set_frequency(int newfreq, int i2c_addr);
 int TPS546_get_temperature(int i2c_addr);
 float TPS546_get_vin(int i2c_addr);
 float TPS546_get_iout(int i2c_addr);
