@@ -104,7 +104,7 @@
 
                         <h6>Input Voltage <span style="float: right;">{{info.voltage}} V</span></h6>
                         <div class="relative">
-                            <p-progressBar [value]="(info.voltage / (info.voltage * 10)) * 100" [style]="{ height: '6px' }">
+                            <p-progressBar [value]="(info.voltage / (info.voltage * 1.1)) * 100" [style]="{ height: '6px' }">
                                 <ng-template pTemplate="content" let-value></ng-template>
                             </p-progressBar>
                             <!-- Add marker at 5.0V (90.91% of 5.5V) -->
