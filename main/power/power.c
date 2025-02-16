@@ -12,7 +12,8 @@
 #define SUPRA_POWER_OFFSET 5 //Watts
 #define GAMMA_POWER_OFFSET 5 //Watts
 #define GAMMATURBO_POWER_OFFSET 5 //Watts
-#define LV07_POWER_OFFSET 20 //Watts
+#define LV07_POWER_OFFSET 6 //Watts
+#define LV08_POWER_OFFSET 18 //Watts
 
 esp_err_t Power_disable(GlobalState * GLOBAL_STATE) {
 
@@ -71,11 +72,10 @@ float Power_get_power(GlobalState * GLOBAL_STATE) {
                 power += LV07_POWER_OFFSET; // Add offset for the rest of the Bitaxe power. TODO: this better.
             break;
         case DEVICE_LV08:
-                current = TPS546_get_iout(0) * 1000.0;
                 // calculate regulator power (in milliwatts)
-                power = (TPS546_get_vout(0) * TPS546_get_iout(0) + TPS546_get_vout(1) * TPS546_get_iout(1) + TPS546_get_vout(2) * TPS546_get_iout(2)) / 1000.0;
+                power = TPS546_get_vout(0) * TPS546_get_iout(0) + TPS546_get_vout(1) * TPS546_get_iout(1) + TPS546_get_vout(2) * TPS546_get_iout(2);
                 // The power reading from the TPS546 is only it's output power. So the rest of the Bitaxe power is not accounted for.
-                power += LV07_POWER_OFFSET; // Add offset for the rest of the Bitaxe power. TODO: this better.
+                power += LV08_POWER_OFFSET; // Add offset for the rest of the Bitaxe power. TODO: this better.
             break;
         default:
     }
