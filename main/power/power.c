@@ -5,6 +5,8 @@
 #include "power.h"
 #include "vcore.h"
 
+#include <math.h>
+
 #define GPIO_ASIC_ENABLE CONFIG_GPIO_ASIC_ENABLE
 
 #define SUPRA_POWER_OFFSET 5 //Watts
@@ -71,7 +73,7 @@ float Power_get_power(GlobalState * GLOBAL_STATE) {
         case DEVICE_LV08:
                 current = TPS546_get_iout(0) * 1000.0;
                 // calculate regulator power (in milliwatts)
-                power = Math.max( (TPS546_get_vout(0) * TPS546_get_iout(0)), (TPS546_get_vout(1) * TPS546_get_iout(1)), (TPS546_get_vout(2) * TPS546_get_iout(2)) ) / 1000.0;
+                power = fmax((TPS546_get_vout(0) * TPS546_get_iout(0)), (TPS546_get_vout(1) * TPS546_get_iout(1)), (TPS546_get_vout(2) * TPS546_get_iout(2))) / 1000.0;
                 // The power reading from the TPS546 is only it's output power. So the rest of the Bitaxe power is not accounted for.
                 power += LV07_POWER_OFFSET; // Add offset for the rest of the Bitaxe power. TODO: this better.
             break;
@@ -102,7 +104,7 @@ float Power_get_input_voltage(GlobalState * GLOBAL_STATE) {
         case DEVICE_LV07:
             return TPS546_get_vin(0) * 1000.0;
         case DEVICE_LV08:
-            return Math.max(TPS546_get_vin(0), TPS546_get_vin(2), TPS546_get_vin(2)) * 1000.0;
+            return fmax(TPS546_get_vin(0), TPS546_get_vin(2), TPS546_get_vin(2)) * 1000.0;
             break;
         default:
     }
@@ -130,7 +132,7 @@ float Power_get_vreg_temp(GlobalState * GLOBAL_STATE) {
         case DEVICE_LV07:
         return TPS546_get_temperature(0);
         case DEVICE_LV08:
-                return Math.max(TPS546_get_temperature(0),TPS546_get_temperature(1),TPS546_get_temperature(2));
+                return fmax(TPS546_get_temperature(0),TPS546_get_temperature(1),TPS546_get_temperature(2));
             break;
         default:
     }

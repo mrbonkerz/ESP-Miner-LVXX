@@ -174,7 +174,7 @@ int16_t VCORE_get_voltage_mv(GlobalState * global_state) {
         case DEVICE_LV07:
         return TPS546_get_vout(0) * 1000;
         case DEVICE_LV08:
-            return Math.max(TPS546_get_vout(0), TPS546_get_vout(1), TPS546_get_vout(2)) * 1000;
+            return fmax(TPS546_get_vout(0), TPS546_get_vout(1), TPS546_get_vout(2)) * 1000;
         // case DEVICE_HEX:
         default:
     }
