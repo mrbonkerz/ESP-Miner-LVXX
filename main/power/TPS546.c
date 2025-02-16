@@ -282,7 +282,7 @@ static uint16_t float_2_slinear11(float value)
  * The mantissa occupies the full 16-bits of the value
  * @param value The ULINEAR16 value to convert
  */
-static float ulinear16_2_float(uint16_t value, i2c_addr)
+static float ulinear16_2_float(uint16_t value, int i2c_addr)
 {
     uint8_t voutmode;
     int exponent;
@@ -307,7 +307,7 @@ static float ulinear16_2_float(uint16_t value, i2c_addr)
  * The mantissa occupies the full 16-bits of the result
  * @param value The float value to convert
 */
-static uint16_t float_2_ulinear16(float value, i2c_addr)
+static uint16_t float_2_ulinear16(float value, int i2c_addr)
 {
     uint8_t voutmode;
     float exponent;
@@ -404,7 +404,7 @@ esp_err_t TPS546_init(TPS546_CONFIG config, int i2c_addr)
     smb_read_word(PMBUS_READ_IOUT, &u16_value, i2c_addr);
     ESP_LOGI(TAG, "read READ_IOUT: %.2fA", slinear11_2_float(u16_value));
     smb_read_word(PMBUS_READ_VOUT, &u16_value, i2c_addr);
-    ESP_LOGI(TAG, "read READ_VOUT: %.2fV", ulinear16_2_float(u16_value));
+    ESP_LOGI(TAG, "read READ_VOUT: %.2fV", ulinear16_2_float(u16_value, i2c_addr));
 
     ESP_LOGI(TAG, "-----------TIMING---------------------");
     smb_read_word(PMBUS_TON_DELAY, &u16_value, i2c_addr);
@@ -418,7 +418,7 @@ esp_err_t TPS546_init(TPS546_CONFIG config, int i2c_addr)
     ESP_LOGI(TAG, "read TON_MAX_FAULT_LIMIT: %dms", temp);
     smb_read_byte(PMBUS_TON_MAX_FAULT_RESPONSE, &u8_value, i2c_addr);
     ESP_LOGI(TAG, "read TON_MAX_FAULT_RESPONSE: %02x", u8_value);
-    smb_read_word(PMBUS_TOFF_DELAY, &u16_valu, i2c_addr);
+    smb_read_word(PMBUS_TOFF_DELAY, &u16_value, i2c_addr);
     temp = slinear11_2_int(u16_value);
     ESP_LOGI(TAG, "read TOFF_DELAY: %dms", temp);
     smb_read_word(PMBUS_TOFF_FALL, &u16_value, i2c_addr);
@@ -510,7 +510,7 @@ void TPS546_set_mfr_info(int i2c_addr)
 /**
  * @brief Set all the relevant config registers for normal operation 
 */
-void TPS546_write_entire_config(int i2c_addr, int i2c_addr)
+void TPS546_write_entire_config(int i2c_addr)
 {
     ESP_LOGI(TAG, "---Writing new config values to TPS546---");
     /* set up the ON_OFF_CONFIG */
@@ -610,9 +610,9 @@ void TPS546_write_entire_config(int i2c_addr, int i2c_addr)
     ESP_LOGI(TAG, "Setting TON_MAX_FAULT_RESPONSE: %02x", TPS546_INIT_TON_MAX_FAULT_RESPONSE);
     smb_write_byte(PMBUS_TON_MAX_FAULT_RESPONSE, TPS546_INIT_TON_MAX_FAULT_RESPONSE, i2c_addr);
     ESP_LOGI(TAG, "Setting TOFF_DELAY: %dms", TPS546_INIT_TOFF_DELAY);
-    smb_write_word(PMBUS_TOFF_DELAY, int_2_slinear11(TPS546_INIT_TOFF_DELAY, i2c_addr));
+    smb_write_word(PMBUS_TOFF_DELAY, int_2_slinear11(TPS546_INIT_TOFF_DELAY), i2c_addr);
     ESP_LOGI(TAG, "Setting TOFF_FALL: %dms", TPS546_INIT_TOFF_FALL);
-    smb_write_word(PMBUS_TOFF_FALL, int_2_slinear11(TPS546_INIT_TOFF_FALL, i2c_addr));
+    smb_write_word(PMBUS_TOFF_FALL, int_2_slinear11(TPS546_INIT_TOFF_FALL), i2c_addr);
 
     /* Compensation config */
     //ESP_LOGI(TAG, "COMPENSATION");
@@ -962,7 +962,7 @@ void TPS546_show_voltage_settings(int i2c_addr)
     ESP_LOGI(TAG, "read VOUT_UV_WARN_LIMIT: %.2fV", f_value * tps546_config.TPS546_INIT_VOUT_COMMAND);
 
     /* VOUT_UV_FAULT_LIMIT */
-    smb_read_word(PMBUS_VOUT_UV_FAULT_LIMIT, &u16_value), i2c_addr;
+    smb_read_word(PMBUS_VOUT_UV_FAULT_LIMIT, &u16_value, i2c_addr);
     f_value = ulinear16_2_float(u16_value);
     ESP_LOGI(TAG, "read VOUT_UV_FAULT_LIMIT: %.2fV", f_value * tps546_config.TPS546_INIT_VOUT_COMMAND);
 
