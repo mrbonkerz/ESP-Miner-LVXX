@@ -53,7 +53,7 @@ static TPS546_CONFIG TPS546_CONFIG_LV07 = {
     /* vout voltage */
     .TPS546_INIT_SCALE_LOOP = 0.25,
     .TPS546_INIT_VOUT_MIN = 1,
-    .TPS546_INIT_VOUT_MAX = 2,
+    .TPS546_INIT_VOUT_MAX = 3,
     .TPS546_INIT_VOUT_COMMAND = 1.2,
     /* iout current */
     .TPS546_INIT_IOUT_OC_WARN_LIMIT = 25.00, /* A */
