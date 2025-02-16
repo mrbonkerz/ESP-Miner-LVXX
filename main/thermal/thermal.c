@@ -90,8 +90,9 @@ float Thermal_get_chip_temp(GlobalState * GLOBAL_STATE) {
         case DEVICE_GAMMATURBO:
             return EMC2103_get_external_temp();
         case DEVICE_LV07:
+            return TMP1075_read_temperature(0) + INTERNAL_OFFSET;
         case DEVICE_LV08:
-            return TMP1075_read_temperature(0) + 10;
+            return (TMP1075_read_temperature(0) + TMP1075_read_temperature(1)) / 2 + INTERNAL_OFFSET;
         default:
     }
 
