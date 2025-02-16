@@ -34,7 +34,7 @@ static uint8_t MFR_REVISION[] = {0x00, 0x00, 0x01};
 
 //static uint8_t COMPENSATION_CONFIG[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 
-static uint16_t TPS546_I2C_ADDR[3] = {0x24. 0x7F, 0x14};
+static uint16_t TPS546_I2C_ADDR[3] = {0x24, 0x7F, 0x14};
 static i2c_master_dev_handle_t tps546_dev_handle[3];
 
 static TPS546_CONFIG tps546_config;
@@ -282,7 +282,7 @@ static uint16_t float_2_slinear11(float value)
  * The mantissa occupies the full 16-bits of the value
  * @param value The ULINEAR16 value to convert
  */
-static float ulinear16_2_float(uint16_t value, i2c_addr
+static float ulinear16_2_float(uint16_t value, i2c_addr)
 {
     uint8_t voutmode;
     int exponent;

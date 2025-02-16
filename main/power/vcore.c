@@ -149,11 +149,12 @@ esp_err_t VCORE_set_voltage(float core_voltage, GlobalState * global_state)
         case DEVICE_LV07:
             ESP_LOGI(TAG, "Set ASIC voltage = %.3fV", core_voltage);
             ESP_RETURN_ON_ERROR(TPS546_set_vout(core_voltage, 0), TAG, "TPS546 set voltage failed!");
+            break;
         case DEVICE_LV08:
-                ESP_LOGI(TAG, "Set ASIC voltage = %.3fV", core_voltage);
-                ESP_RETURN_ON_ERROR(TPS546_set_vout(core_voltage, 0), TAG, "TPS546 set voltage failed!");
-                ESP_RETURN_ON_ERROR(TPS546_set_vout(core_voltage, 1), TAG, "TPS546 set voltage failed!");
-                ESP_RETURN_ON_ERROR(TPS546_set_vout(core_voltage, 2), TAG, "TPS546 set voltage failed!");
+            ESP_LOGI(TAG, "Set ASIC voltage = %.3fV", core_voltage);
+            ESP_RETURN_ON_ERROR(TPS546_set_vout(core_voltage, 0), TAG, "TPS546 set voltage failed!");
+            ESP_RETURN_ON_ERROR(TPS546_set_vout(core_voltage, 1), TAG, "TPS546 set voltage failed!");
+            ESP_RETURN_ON_ERROR(TPS546_set_vout(core_voltage, 2), TAG, "TPS546 set voltage failed!");
             break;
         // case DEVICE_HEX:
         default:
