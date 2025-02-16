@@ -68,7 +68,7 @@ esp_err_t VCORE_init(GlobalState * GLOBAL_STATE) {
         case DEVICE_ULTRA:
         case DEVICE_SUPRA:
             if (GLOBAL_STATE->board_version >= 402 && GLOBAL_STATE->board_version <= 499) {
-                if (TPS546_init(TPS546_CONFIG_GAMMA) != ESP_OK) {
+                if (TPS546_init(TPS546_CONFIG_GAMMA, 0) != ESP_OK) {
                     ESP_LOGE(TAG, "TPS546 init failed!");
                     return ESP_FAIL;
                 }
@@ -78,14 +78,18 @@ esp_err_t VCORE_init(GlobalState * GLOBAL_STATE) {
             }
             break;
         case DEVICE_GAMMA:
-            ESP_RETURN_ON_ERROR(TPS546_init(TPS546_CONFIG_GAMMA), TAG, "TPS546 init failed!");
+            ESP_RETURN_ON_ERROR(TPS546_init(TPS546_CONFIG_GAMMA, 0), TAG, "TPS546 init failed!");
             break;
         case DEVICE_GAMMATURBO:
-            ESP_RETURN_ON_ERROR(TPS546_init(TPS546_CONFIG_GAMMATURBO), TAG, "TPS546 init failed!");
+            ESP_RETURN_ON_ERROR(TPS546_init(TPS546_CONFIG_GAMMATURBO, 0), TAG, "TPS546 init failed!");
             break;
         case DEVICE_LV07:
+            ESP_RETURN_ON_ERROR(TPS546_init(TPS546_CONFIG_LV07, 0), TAG, "TPS546 init failed!");
+            break;
         case DEVICE_LV08:
-            ESP_RETURN_ON_ERROR(TPS546_init(TPS546_CONFIG_LV07), TAG, "TPS546 init failed!");
+            ESP_RETURN_ON_ERROR(TPS546_init(TPS546_CONFIG_LV07, 0), TAG, "TPS546 init failed!");
+            ESP_RETURN_ON_ERROR(TPS546_init(TPS546_CONFIG_LV07, 1), TAG, "TPS546 init failed!");
+            ESP_RETURN_ON_ERROR(TPS546_init(TPS546_CONFIG_LV07, 2), TAG, "TPS546 init failed!");
             break;
         // case DEVICE_HEX:
         default:

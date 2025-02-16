@@ -4,9 +4,7 @@
 #include <stdint.h>
 #include <esp_err.h>
 
-#define TPS546_I2CADDR_0         0x24  //< TPS546 i2c address
-#define TPS546_I2CADDR_1         0x7F  //< TPS546 i2c address
-#define TPS546_I2CADDR_2         0x14  //< TPS546 i2c address
+#define TPS546_I2CADDR         0x24  //< TPS546 i2c address
 #define TPS546_MANUFACTURER_ID 0xFE  //< Manufacturer ID
 #define TPS546_REVISION        0xFF  //< Chip revision
 
@@ -110,22 +108,22 @@ typedef struct
 
 
 /* public functions */
-esp_err_t TPS546_init(TPS546_CONFIG config);
-void TPS546_read_mfr_info(uint8_t *);
-void TPS546_set_mfr_info(void);
-void TPS546_write_entire_config(void);
-int TPS546_get_frequency(void);
-void TPS546_set_frequency(int);
-int TPS546_get_temperature(void);
-float TPS546_get_vin(void);
-float TPS546_get_iout(void);
-float TPS546_get_vout(void);
-esp_err_t TPS546_set_vout(float volts);
-void TPS546_show_voltage_settings(void);
-void TPS546_print_status(void);
+esp_err_t TPS546_init(TPS546_CONFIG config, int i2c_addr);
+void TPS546_read_mfr_info(uint8_t *, int i2c_addr);
+void TPS546_set_mfr_info(int i2c_addr);
+void TPS546_write_entire_config(int i2c_addr);
+int TPS546_get_frequency(int i2c_addr);
+void TPS546_set_frequency(int i2c_addr);
+int TPS546_get_temperature(int i2c_addr);
+float TPS546_get_vin(int i2c_addr);
+float TPS546_get_iout(int i2c_addr);
+float TPS546_get_vout(int i2c_addr);
+esp_err_t TPS546_set_vout(float volts, int i2c_addr);
+void TPS546_show_voltage_settings(int i2c_addr);
+void TPS546_print_status(int i2c_addr);
 
-esp_err_t TPS546_check_status(uint16_t *);
-esp_err_t TPS546_parse_status(uint16_t status);
-esp_err_t TPS546_clear_faults(void);
+esp_err_t TPS546_check_status(uint16_t *, int i2c_addr);
+esp_err_t TPS546_parse_status(uint16_t status, int i2c_addr);
+esp_err_t TPS546_clear_faults(int i2c_addr);
 
 #endif /* TPS546_H_ */

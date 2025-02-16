@@ -45,8 +45,8 @@ esp_err_t Thermal_set_fan_percent(DeviceModel device_model, float percent) {
             break;
         case DEVICE_LV07:
         case DEVICE_LV08:
-        EMC2302_set_fan_speed(0, percent);
-        EMC2302_set_fan_speed(1, percent);
+            EMC2302_set_fan_speed(0, percent);
+            EMC2302_set_fan_speed(1, percent);
             break;
         default:
     }
@@ -91,7 +91,7 @@ float Thermal_get_chip_temp(GlobalState * GLOBAL_STATE) {
             return EMC2103_get_external_temp();
         case DEVICE_LV07:
         case DEVICE_LV08:
-            return (TMP1075_read_temperature(0)+TMP1075_read_temperature(1))/2;
+            return TMP1075_read_temperature(0) + 10;
         default:
     }
 
