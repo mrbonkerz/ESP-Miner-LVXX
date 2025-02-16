@@ -1,6 +1,15 @@
 <ng-container *ngIf="form != null">
+    <div class="flex justify-content-end align-items-center mb-3">
+        <i class="pi pi-info-circle mr-2" style="font-size: 1rem;" 
+           pTooltip="Enables advanced settings for custom frequency and voltage values. Overclocking might destroy your device!"></i>
+        <button pButton 
+                [label]="proMode ? 'Disable Pro Mode' : 'Enable Pro Mode'"
+                [class]="proMode ? 'p-button-danger' : 'p-button-primary'"
+                (click)="proMode = !proMode">
+        </button>
+    </div>
     <form [formGroup]="form">
-        <ng-container *ngIf="!devToolsOpen && [eASICModel.BM1366, eASICModel.BM1368, eASICModel.BM1370, eASICModel.BM1397].includes(ASICModel)">
+        <ng-container *ngIf="!devToolsOpen && !proMode && [eASICModel.BM1366, eASICModel.BM1368, eASICModel.BM1370, eASICModel.BM1397].includes(ASICModel)">
             <div class="field grid p-fluid">
                 <label class="col-12 mb-2 md:col-2 md:mb-0" htmlFor="frequency">Frequency</label>
                 <div class="col-12 md:col-10">
@@ -16,7 +25,7 @@
             </div>
         </ng-container>
 
-        <ng-container *ngIf="devToolsOpen === true">
+        <ng-container *ngIf="devToolsOpen === true || proMode === true">
 
             <div class="field grid p-fluid">
                 <label htmlFor="frequency" class="col-12 mb-2 md:col-2 md:mb-0">Frequency</label>
@@ -48,7 +57,7 @@
             <div class="field-checkbox">
                 <p-checkbox name="flipscreen" formControlName="flipscreen" inputId="flipscreen"
                     [binary]="true"></p-checkbox>
-                <label for="flipscreen">Flip Screen</label>
+                <label for="flipscreen">Flip Screen <i class="pi pi-info-circle" style="font-size: 0.8rem; margin-left: 0.2rem;" pTooltip="Rotates the LCD screen by 180 degrees"></i></label>
             </div>
         </div>
 
@@ -56,7 +65,7 @@
             <div class="field-checkbox">
                 <p-checkbox name="invertfanpolarity" formControlName="invertfanpolarity" inputId="invertfanpolarity"
                     [binary]="true"></p-checkbox>
-                <label for="invertfanpolarity">Invert Fan Polarity</label>
+                <label for="invertfanpolarity">Invert Fan Polarity <i class="pi pi-info-circle" style="font-size: 0.8rem; margin-left: 0.2rem;" pTooltip="Inverting the polarity of the fan PWM signal"></i></label>
             </div>
         </div>
         <div class="col-12">
