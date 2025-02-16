@@ -189,7 +189,7 @@ int16_t VCORE_get_voltage_mv(GlobalState * global_state) {
         case DEVICE_GAMMATURBO:
             return ADC_get_vcore();
         case DEVICE_LV07:
-        return TPS546_get_vout(0) * 1000;
+            return TPS546_get_vout(0) * 1000;
         case DEVICE_LV08:
             return fmax(fmax(TPS546_get_vout(0), TPS546_get_vout(1)), TPS546_get_vout(2)) * 1000;
         // case DEVICE_HEX:
