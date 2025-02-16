@@ -138,7 +138,7 @@ esp_err_t VCORE_set_voltage(float core_voltage, GlobalState * global_state)
         case DEVICE_SUPRA:
             if (global_state->board_version >= 402 && global_state->board_version <= 499) {
                 ESP_LOGI(TAG, "Set ASIC voltage = %.3fV", core_voltage);
-                ESP_RETURN_ON_ERROR(TPS546_set_vout(core_voltage), TAG, "TPS546 set voltage failed!");
+                ESP_RETURN_ON_ERROR(TPS546_set_vout(core_voltage, 0), TAG, "TPS546 set voltage failed!");
             } else {
                 ESP_LOGI(TAG, "Set ASIC voltage = %.3fV", core_voltage);
                 ESP_RETURN_ON_ERROR(DS4432U_set_voltage(core_voltage), TAG, "DS4432U set voltage failed!");
@@ -147,9 +147,13 @@ esp_err_t VCORE_set_voltage(float core_voltage, GlobalState * global_state)
         case DEVICE_GAMMA:
         case DEVICE_GAMMATURBO:
         case DEVICE_LV07:
+            ESP_LOGI(TAG, "Set ASIC voltage = %.3fV", core_voltage);
+            ESP_RETURN_ON_ERROR(TPS546_set_vout(core_voltage, 0), TAG, "TPS546 set voltage failed!");
         case DEVICE_LV08:
                 ESP_LOGI(TAG, "Set ASIC voltage = %.3fV", core_voltage);
-                ESP_RETURN_ON_ERROR(TPS546_set_vout(core_voltage), TAG, "TPS546 set voltage failed!");
+                ESP_RETURN_ON_ERROR(TPS546_set_vout(core_voltage, 0), TAG, "TPS546 set voltage failed!");
+                ESP_RETURN_ON_ERROR(TPS546_set_vout(core_voltage, 1), TAG, "TPS546 set voltage failed!");
+                ESP_RETURN_ON_ERROR(TPS546_set_vout(core_voltage, 2), TAG, "TPS546 set voltage failed!");
             break;
         // case DEVICE_HEX:
         default:
@@ -168,9 +172,9 @@ int16_t VCORE_get_voltage_mv(GlobalState * global_state) {
         case DEVICE_GAMMATURBO:
             return ADC_get_vcore();
         case DEVICE_LV07:
-        return (TPS546_get_vout(0) * 1000);
+        return TPS546_get_vout(0) * 1000;
         case DEVICE_LV08:
-            return (math.max(TPS546_get_vout(0), TPS546_get_vout(1), TPS546_get_vout(2)) * 1000);
+            return Math.max(TPS546_get_vout(0), TPS546_get_vout(1), TPS546_get_vout(2)) * 1000;
         // case DEVICE_HEX:
         default:
     }
