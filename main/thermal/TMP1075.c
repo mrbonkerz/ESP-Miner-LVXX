@@ -37,6 +37,6 @@ uint8_t TMP1075_read_temperature(int device_index)
     ESP_ERROR_CHECK(i2c_bitaxe_register_read(tmp1075_dev_handle, TMP1075_TEMP_REG, data, 2));
     //ESP_LOGI(TAG, "Raw Temperature = %02X %02X", data[0], data[1]);
     //ESP_LOGI(TAG, "Temperature[%d] = %d", device_index, data[0]);
-    return data[device_index];
+    return data[0];
 }
 
