@@ -130,9 +130,9 @@ float Power_get_vreg_temp(GlobalState * GLOBAL_STATE) {
         case DEVICE_GAMMA:
         case DEVICE_GAMMATURBO:
         case DEVICE_LV07:
-        return TPS546_get_temperature(0);
+            return TPS546_get_temperature(0);
         case DEVICE_LV08:
-                return fmax(fmax(TPS546_get_temperature(0),TPS546_get_temperature(1)),TPS546_get_temperature(2));
+            return fmax(fmax(TPS546_get_temperature(0),TPS546_get_temperature(1)),TPS546_get_temperature(2));
             break;
         default:
     }
