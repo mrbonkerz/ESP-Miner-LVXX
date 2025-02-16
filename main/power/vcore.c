@@ -53,7 +53,7 @@ static TPS546_CONFIG TPS546_CONFIG_LV07 = {
     /* vout voltage */
     .TPS546_INIT_SCALE_LOOP = 0.25,
     .TPS546_INIT_VOUT_MIN = 1,
-    .TPS546_INIT_VOUT_MAX = 3,
+    .TPS546_INIT_VOUT_MAX = 2,
     .TPS546_INIT_VOUT_COMMAND = 1.2,
     /* iout current */
     .TPS546_INIT_IOUT_OC_WARN_LIMIT = 25.00, /* A */
@@ -168,8 +168,9 @@ int16_t VCORE_get_voltage_mv(GlobalState * global_state) {
         case DEVICE_GAMMATURBO:
             return ADC_get_vcore();
         case DEVICE_LV07:
+        return (TPS546_get_vout(0) * 1000);
         case DEVICE_LV08:
-            return (TPS546_get_vout() * 1000);
+            return (math.max(TPS546_get_vout(0), TPS546_get_vout(1), TPS546_get_vout(2)) * 1000);
         // case DEVICE_HEX:
         default:
     }
