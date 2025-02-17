@@ -661,7 +661,7 @@ void TPS546_set_frequency(int newfreq, int i2c_addr)
     value = int_2_slinear11(newfreq);
     //ESP_LOGI(TAG, "New value: 0x%04x", value);
     smb_write_word(PMBUS_FREQUENCY_SWITCH, value, i2c_addr);
-
+ 
     //ESP_LOGI(TAG, "Checking conversion...");
     //freq = slinear11_2_int(value);
     //ESP_LOGI(TAG, "Converted value: %d", freq);
