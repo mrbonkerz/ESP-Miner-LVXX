@@ -9,7 +9,7 @@
 #include "i2c_bitaxe.h"
 #include "TPS546.h"
 
-//#define _DEBUG_LOG_ 1
+#define _DEBUG_LOG_ 1
 
 #define I2C_MASTER_NUM 0 /*!< I2C master i2c port number, the number of i2c peripheral interfaces available will depend on the chip */
 
@@ -674,14 +674,10 @@ int TPS546_get_temperature(int i2c_addr)
 
     smb_read_word(PMBUS_READ_TEMPERATURE_1, &value, i2c_addr);
     temp = slinear11_2_int(value);
-
-    if (i2c_addr == 0) {
-        ESP_LOGI(TAG, "TPS546 Temp: %i", temp);
-    }
-    else {
-        ESP_LOGI(TAG, "TPS546_%i Temp: %i", i2c_addr, temp);
-    }
     
+    #ifdef _DEBUG_LOG_
+        ESP_LOGI(TAG, "TPS546_%i Got Temp: %i", i2c_addr, temp);
+    #endif
     return temp;
 }
 
@@ -697,7 +693,7 @@ float TPS546_get_vin(int i2c_addr)
     } else {
         vin = slinear11_2_float(u16_value);
         #ifdef _DEBUG_LOG_
-        ESP_LOGI(TAG, "Got Vin: %2.3f V", vin);
+        ESP_LOGI(TAG, "TPS546_%i Got Vin: %2.3f V", i2c_addr, vin);
         #endif
         return vin;
     }    
@@ -716,7 +712,7 @@ float TPS546_get_iout(int i2c_addr)
         iout = slinear11_2_float(u16_value);
 
     #ifdef _DEBUG_LOG_
-        ESP_LOGI(TAG, "Got Iout: %2.3f A", iout);
+        ESP_LOGI(TAG, "TPS546_%i Got Iout: %2.3f A", i2c_addr, iout);
     #endif
 
         return iout;
@@ -735,7 +731,7 @@ float TPS546_get_vout(int i2c_addr)
     } else {
         vout = ulinear16_2_float(u16_value, i2c_addr);
     #ifdef _DEBUG_LOG_
-        ESP_LOGI(TAG, "Got Vout: %2.3f V", vout);
+        ESP_LOGI(TAG, "TPS546_%i Got Vout: %2.3f V", i2c_addr, vout);
     #endif
         return vout;
     }
