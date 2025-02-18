@@ -343,7 +343,7 @@ esp_err_t TPS546_init(TPS546_CONFIG config, int i2c_addr)
 
     tps546_config = config;
 
-    ESP_LOGI(TAG, "Initializing the core voltage regulator");
+    ESP_LOGI(TAG, "Initializing the core voltage regulator with TPS546_%i", i2c_addr);
 
     if (i2c_bitaxe_add_device(TPS546_I2C_ADDR[i2c_addr], &tps546_dev_handle[i2c_addr], TAG) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to add I2C device");
@@ -676,7 +676,7 @@ int TPS546_get_temperature(int i2c_addr)
     temp = slinear11_2_int(value);
     
     #ifdef _DEBUG_LOG_
-        ESP_LOGI(TAG, "TPS546_%i Got Temp: %i", i2c_addr, temp);
+        ESP_LOGI(TAG, "TPS546_%i - Got Temp: %i", i2c_addr, temp);
     #endif
     return temp;
 }
@@ -693,7 +693,7 @@ float TPS546_get_vin(int i2c_addr)
     } else {
         vin = slinear11_2_float(u16_value);
         #ifdef _DEBUG_LOG_
-        ESP_LOGI(TAG, "TPS546_%i Got Vin: %2.3f V", i2c_addr, vin);
+        ESP_LOGI(TAG, "TPS546_%i - Got Vin: %2.3f V", i2c_addr, vin);
         #endif
         return vin;
     }    
@@ -712,7 +712,7 @@ float TPS546_get_iout(int i2c_addr)
         iout = slinear11_2_float(u16_value);
 
     #ifdef _DEBUG_LOG_
-        ESP_LOGI(TAG, "TPS546_%i Got Iout: %2.3f A", i2c_addr, iout);
+        ESP_LOGI(TAG, "TPS546_%i - Got Iout: %2.3f A", i2c_addr, iout);
     #endif
 
         return iout;
@@ -731,7 +731,7 @@ float TPS546_get_vout(int i2c_addr)
     } else {
         vout = ulinear16_2_float(u16_value, i2c_addr);
     #ifdef _DEBUG_LOG_
-        ESP_LOGI(TAG, "TPS546_%i Got Vout: %2.3f V", i2c_addr, vout);
+        ESP_LOGI(TAG, "TPS546_%i - Got Vout: %2.3f V", i2c_addr, vout);
     #endif
         return vout;
     }
