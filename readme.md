@@ -1,8 +1,10 @@
 # Lucky Miner Support
-If you're looking to unlock your Lucky Miner, you've come to the right place. This firmware, a modified version of Skot's ESP-Miner, is designed to work with LV07/LV08.
+If you're looking to unlock your Lucky Miner, you've come to the right fork. This version of Skot's ESP-Miner firmware, kept as close to the original as possible, is adapted to work with LV07/LV08 and potentially future LVXX miners.
 
 ![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/mrbonkerz/esp-miner-lvxx/total)
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/t/mrbonkerz/esp-miner-lvxx)
+![GitHub Release](https://img.shields.io/github/v/release/mrbonkerz/esp-miner-lvxx?include_prereleases&label=ESP-Miner-LVXX&color=yellowgreen)
+![GitHub Release](https://img.shields.io/github/v/release/skot/esp-miner?include_prereleases&label=ESP-Miner&color=blue)
 
 #
 
