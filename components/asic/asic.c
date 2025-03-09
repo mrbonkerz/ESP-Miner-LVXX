@@ -70,6 +70,9 @@ uint16_t ASIC_get_small_core_count(GlobalState * GLOBAL_STATE) {
             return BM1370_SMALL_CORE_COUNT;
         case DEVICE_GAMMATURBO:
             return BM1370_SMALL_CORE_COUNT;
+        case DEVICE_LV07:
+        case DEVICE_LV08:
+            return BM1366_SMALL_CORE_COUNT;
         default:
     }
     return 0;
@@ -108,6 +111,9 @@ int ASIC_set_max_baud(GlobalState * GLOBAL_STATE) {
         case DEVICE_GAMMA:
         case DEVICE_GAMMATURBO:
             return BM1370_set_max_baud();
+        case DEVICE_LV07:
+        case DEVICE_LV08:
+            return BM1366_set_max_baud();
         default:
     return 0;
     }
@@ -130,6 +136,10 @@ void ASIC_set_job_difficulty_mask(GlobalState * GLOBAL_STATE, uint8_t mask) {
         case DEVICE_GAMMA:
         case DEVICE_GAMMATURBO:
             BM1370_set_job_difficulty_mask(mask);
+            break;
+        case DEVICE_LV07:
+        case DEVICE_LV08:
+            BM1366_set_job_difficulty_mask(mask);
             break;
         default:
     }
@@ -172,6 +182,10 @@ void ASIC_set_version_mask(GlobalState * GLOBAL_STATE, uint32_t mask) {
         case DEVICE_GAMMA:
         case DEVICE_GAMMATURBO:
             BM1370_set_version_mask(mask);
+            break;
+        case DEVICE_LV07:
+        case DEVICE_LV08:
+            BM1366_set_version_mask(mask);
             break;
         default:
     return;
