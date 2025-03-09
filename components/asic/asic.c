@@ -151,8 +151,10 @@ int ASIC_send_work(GlobalState * GLOBAL_STATE, void * next_job) {
             return BM1368_send_work(GLOBAL_STATE, next_job);
         case DEVICE_GAMMA:
         case DEVICE_GAMMATURBO:
-            BM1370_send_work(GLOBAL_STATE, next_job);
-            break;
+            return BM1370_send_work(GLOBAL_STATE, next_job);
+        case DEVICE_LV07:
+        case DEVICE_LV08:
+            return BM1366_send_work(GLOBAL_STATE, next_job); 
         default:
     return -1;
     }
