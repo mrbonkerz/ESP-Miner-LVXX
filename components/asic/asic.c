@@ -60,6 +60,8 @@ uint16_t ASIC_get_small_core_count(GlobalState * GLOBAL_STATE) {
     switch (GLOBAL_STATE->device_model) {
         case DEVICE_MAX:
             return BM1397_SMALL_CORE_COUNT;
+        case DEVICE_LV07:
+        case DEVICE_LV08:
         case DEVICE_ULTRA:
             return BM1366_SMALL_CORE_COUNT;
         case DEVICE_SUPRA:
@@ -68,9 +70,6 @@ uint16_t ASIC_get_small_core_count(GlobalState * GLOBAL_STATE) {
             return BM1370_SMALL_CORE_COUNT;
         case DEVICE_GAMMATURBO:
             return BM1370_SMALL_CORE_COUNT;
-        case DEVICE_LV07:
-        case DEVICE_LV08:
-            return BM1366_SMALL_CORE_COUNT;
         default:
     }
     return 0;
@@ -81,16 +80,15 @@ task_result * ASIC_proccess_work(GlobalState * GLOBAL_STATE) {
     switch (GLOBAL_STATE->device_model) {
         case DEVICE_MAX:
             return BM1397_proccess_work(GLOBAL_STATE);
+        case DEVICE_LV07:
+        case DEVICE_LV08:
         case DEVICE_ULTRA:
             return BM1366_proccess_work(GLOBAL_STATE);
         case DEVICE_SUPRA:
             return BM1368_proccess_work(GLOBAL_STATE);
         case DEVICE_GAMMA:
         case DEVICE_GAMMATURBO:
-            return BM1370_proccess_work(GLOBAL_STATE);
-        case DEVICE_LV07:
-        case DEVICE_LV08:
-            return BM1366_proccess_work(GLOBAL_STATE);    
+            return BM1370_proccess_work(GLOBAL_STATE);  
         default:
     }
     return NULL;
@@ -101,6 +99,8 @@ int ASIC_set_max_baud(GlobalState * GLOBAL_STATE) {
     switch (GLOBAL_STATE->device_model) {
         case DEVICE_MAX:
             return BM1397_set_max_baud();
+        case DEVICE_LV07:
+        case DEVICE_LV08:
         case DEVICE_ULTRA:
             return BM1366_set_max_baud();
         case DEVICE_SUPRA:
@@ -108,9 +108,6 @@ int ASIC_set_max_baud(GlobalState * GLOBAL_STATE) {
         case DEVICE_GAMMA:
         case DEVICE_GAMMATURBO:
             return BM1370_set_max_baud();
-        case DEVICE_LV07:
-        case DEVICE_LV08:
-            return BM1366_set_max_baud();
         default:
     return 0;
     }
@@ -122,6 +119,8 @@ void ASIC_set_job_difficulty_mask(GlobalState * GLOBAL_STATE, uint8_t mask) {
         case DEVICE_MAX:
             BM1397_set_job_difficulty_mask(mask);
             break;
+        case DEVICE_LV07:
+        case DEVICE_LV08:
         case DEVICE_ULTRA:
             BM1366_set_job_difficulty_mask(mask);
             break;
@@ -131,10 +130,6 @@ void ASIC_set_job_difficulty_mask(GlobalState * GLOBAL_STATE, uint8_t mask) {
         case DEVICE_GAMMA:
         case DEVICE_GAMMATURBO:
             BM1370_set_job_difficulty_mask(mask);
-            break;
-        case DEVICE_LV07:
-        case DEVICE_LV08:
-            BM1366_set_job_difficulty_mask(mask);
             break;
         default:
     }
@@ -146,6 +141,8 @@ void ASIC_send_work(GlobalState * GLOBAL_STATE, void * next_job) {
         case DEVICE_MAX:
             BM1397_send_work(GLOBAL_STATE, next_job);
             break;
+        case DEVICE_LV07:
+        case DEVICE_LV08:
         case DEVICE_ULTRA:
             BM1366_send_work(GLOBAL_STATE, next_job);
             break;
@@ -155,10 +152,6 @@ void ASIC_send_work(GlobalState * GLOBAL_STATE, void * next_job) {
         case DEVICE_GAMMA:
         case DEVICE_GAMMATURBO:
             BM1370_send_work(GLOBAL_STATE, next_job);
-            break;
-        case DEVICE_LV07:
-        case DEVICE_LV08:
-            BM1366_send_work(GLOBAL_STATE, next_job);
             break;
         default:
     return;
@@ -171,6 +164,8 @@ void ASIC_set_version_mask(GlobalState * GLOBAL_STATE, uint32_t mask) {
         case DEVICE_MAX:
             BM1397_set_version_mask(mask);
             break;
+        case DEVICE_LV07:
+        case DEVICE_LV08:
         case DEVICE_ULTRA:
             BM1366_set_version_mask(mask);
             break;
@@ -180,10 +175,6 @@ void ASIC_set_version_mask(GlobalState * GLOBAL_STATE, uint32_t mask) {
         case DEVICE_GAMMA:
         case DEVICE_GAMMATURBO:
             BM1370_set_version_mask(mask);
-            break;
-        case DEVICE_LV07:
-        case DEVICE_LV08:
-            BM1366_set_version_mask(mask);
             break;
         default:
     return;
