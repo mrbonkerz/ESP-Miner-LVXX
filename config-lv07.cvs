@@ -10,6 +10,7 @@ stratumpass,data,string,x
 fbstratumurl,data,string,americas.mining-dutch.nl
 fbstratumport,data,u16,9995
 fbstratumuser,data,string,lvxx.lv08
+fbstratumpass,data,string,x
 asicfrequency,data,u16,485
 asicvoltage,data,u16,1200
 asicmodel,data,string,BM1366
