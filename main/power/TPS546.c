@@ -360,7 +360,7 @@ esp_err_t TPS546_init(TPS546_CONFIG config, int i2c_addr)
     //write operation register to turn off power
     u8_value = OPERATION_OFF;
     ESP_LOGI(TAG, "Power config-OPERATION: %02X", u8_value);
-    smb_write_byte(PMBUS_OPERATION, u8_value);
+    smb_write_byte(PMBUS_OPERATION, u8_value, i2c_addr);
 
     /* Make sure power is turned off until commanded */
     u8_value = (ON_OFF_CONFIG_DELAY | ON_OFF_CONFIG_POLARITY | ON_OFF_CONFIG_CP | ON_OFF_CONFIG_CMD | ON_OFF_CONFIG_PU);
@@ -737,7 +737,7 @@ esp_err_t TPS546_check_status(GlobalState * global_state, int i2c_addr) {
     //determine if this is a fault we care about
     if (status & (TPS546_STATUS_OFF | TPS546_STATUS_VOUT_OV | TPS546_STATUS_IOUT_OC | TPS546_STATUS_VIN_UV | TPS546_STATUS_TEMP)) {
         if (sys_module->power_fault == 0) {
-            ESP_RETURN_ON_ERROR(TPS546_parse_status(status, int i2c_addr), TAG, "Failed to parse STATUS_WORD");
+            ESP_RETURN_ON_ERROR(TPS546_parse_status(status, i2c_addr), TAG, "Failed to parse STATUS_WORD");
             sys_module->power_fault = 1;
         }
     } else {
