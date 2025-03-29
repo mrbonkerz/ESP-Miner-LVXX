@@ -21,6 +21,8 @@
 #define SUPRA_MAX_POWER 40 //watts
 #define GAMMA_MAX_POWER 40 //Watts
 #define GAMMATURBO_MAX_POWER 60 //Watts
+#define LV07_MAX_POWER 40 //Watts
+#define LV08_MAX_POWER 140 //Watts
 
 // nominal voltage settings
 #define NOMINAL_VOLTAGE_5 5 //volts
@@ -65,12 +67,16 @@ float Power_get_max_settings(GlobalState * GLOBAL_STATE) {
             return GAMMA_MAX_POWER;
         case DEVICE_GAMMATURBO:
             return GAMMATURBO_MAX_POWER;
+        case DEVICE_LV07:
+            return LV07_MAX_POWER;
+        case DEVICE_LV08:
+            return LV08_MAX_POWER;
         default:
         return GAMMA_MAX_POWER;
     }
 }
 
-float Power_get_current(GlobalState * GLOBAL_STATE) {
+float Power_get_current(GlobalState * GLOBAL_STATE, int i2c_addr) {
     float current = 0.0;
 
     switch (GLOBAL_STATE->device_model) {
@@ -78,7 +84,7 @@ float Power_get_current(GlobalState * GLOBAL_STATE) {
         case DEVICE_ULTRA:
         case DEVICE_SUPRA:
             if (GLOBAL_STATE->board_version >= 402 && GLOBAL_STATE->board_version <= 499) {
-                current = TPS546_get_iout() * 1000.0;
+                current = TPS546_get_iout(i2c_addr) * 1000.0;
             } else {
                 if (INA260_installed() == true) {
                     current = INA260_read_current();
@@ -87,7 +93,13 @@ float Power_get_current(GlobalState * GLOBAL_STATE) {
             break;
         case DEVICE_GAMMA:
         case DEVICE_GAMMATURBO:
-            current = TPS546_get_iout() * 1000.0;
+            current = TPS546_get_iout(i2c_addr) * 1000.0;
+            break;
+        case DEVICE_LV07:
+            current = TPS546_get_iout(i2c_addr) * 1000.0;
+            break;
+        case DEVICE_LV08:
+            current = TPS546_get_iout(i2c_addr) * 1000.0;
             break;
         default:
     }
