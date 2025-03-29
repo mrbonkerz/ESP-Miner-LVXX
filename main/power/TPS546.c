@@ -37,7 +37,7 @@ static i2c_master_dev_handle_t tps546_dev_handle[3];
 
 static TPS546_CONFIG tps546_config;
 
-static esp_err_t TPS546_parse_status(uint16_t);
+static esp_err_t TPS546_parse_status(uint16_t, int i2c_addr);
 
 /**
  * @brief SMBus read byte
@@ -131,7 +131,7 @@ static esp_err_t smb_read_block(uint8_t command, uint8_t *data, uint8_t len, int
 //     memcpy(buf+2, data, len);
 
 //     //write it all
-//     if (i2c_bitaxe_register_write_bytes(tps546_i2c_handle[i2c_addr], buf, len+2) != ESP_OK) {
+//     if (i2c_bitaxe_register_write_bytes(tps546_dev_handle[i2c_addr], buf, len+2) != ESP_OK) {
 //         free(buf);
 //         return ESP_FAIL;
 //     } else {
@@ -345,7 +345,7 @@ esp_err_t TPS546_init(TPS546_CONFIG config, int i2c_addr)
 
     ESP_LOGI(TAG, "Initializing the core voltage regulator with TPS546_%i", i2c_addr);
 
-    ESP_RETURN_ON_ERROR(i2c_bitaxe_add_device(TPS546_I2C_ADDR[i2c_addr], &tps546_i2c_handle[i2c_addr], TAG), TAG, "Failed to add TPS546 I2C");
+    ESP_RETURN_ON_ERROR(i2c_bitaxe_add_device(TPS546_I2C_ADDR[i2c_addr], &tps546_dev_handle[i2c_addr], TAG), TAG, "Failed to add TPS546 I2C");
 
     /* Establish communication with regulator */
     smb_read_block(PMBUS_IC_DEVICE_ID, data, 6, i2c_addr); //the DEVICE_ID block first byte is the length.
@@ -432,9 +432,9 @@ esp_err_t TPS546_init(TPS546_CONFIG config, int i2c_addr)
     smb_read_byte(PMBUS_CAPABILITY, &u8_value, i2c_addr);
     ESP_LOGI(TAG, "read CAPABILITY: %02x", u8_value);
     ESP_LOGI(TAG, "---------OPERATION------------------");
-    smb_read_byte(PMBUS_OPERATION, &u8_value);
+    smb_read_byte(PMBUS_OPERATION, &u8_value, i2c_addr);
     ESP_LOGI(TAG, "read OPERATION: %02x", u8_value);
-    smb_read_byte(PMBUS_ON_OFF_CONFIG, &u8_value);
+    smb_read_byte(PMBUS_ON_OFF_CONFIG, &u8_value, i2c_addr);
     ESP_LOGI(TAG, "read ON_OFF_CONFIG: %02x", u8_value);
 
 
@@ -452,7 +452,7 @@ esp_err_t TPS546_init(TPS546_CONFIG config, int i2c_addr)
     ESP_LOGI(TAG, "Clearing faults");
     TPS546_clear_faults(i2c_addr);
 
-    smb_read_word(PMBUS_STATUS_WORD, &u16_value);
+    smb_read_word(PMBUS_STATUS_WORD, &u16_value, i2c_addr);
     ESP_LOGI(TAG, "read STATUS_WORD: %04x", u16_value);
 
     return ESP_OK;
@@ -728,16 +728,16 @@ float TPS546_get_vout(int i2c_addr)
     }
 }
 
-esp_err_t TPS546_check_status(GlobalState * global_state) {
+esp_err_t TPS546_check_status(GlobalState * global_state, int i2c_addr) {
 
-    uint16_t status, int i2c_addr;
+    uint16_t status;
     SystemModule * sys_module = &global_state->SYSTEM_MODULE;
 
-    ESP_RETURN_ON_ERROR(smb_read_word(PMBUS_STATUS_WORD, &status), TAG, "Failed to read STATUS_WORD");
+    ESP_RETURN_ON_ERROR(smb_read_word(PMBUS_STATUS_WORD, &status, i2c_addr), TAG, "Failed to read STATUS_WORD");
     //determine if this is a fault we care about
     if (status & (TPS546_STATUS_OFF | TPS546_STATUS_VOUT_OV | TPS546_STATUS_IOUT_OC | TPS546_STATUS_VIN_UV | TPS546_STATUS_TEMP)) {
         if (sys_module->power_fault == 0) {
-            ESP_RETURN_ON_ERROR(TPS546_parse_status(status), TAG, "Failed to parse STATUS_WORD");
+            ESP_RETURN_ON_ERROR(TPS546_parse_status(status, int i2c_addr), TAG, "Failed to parse STATUS_WORD");
             sys_module->power_fault = 1;
         }
     } else {
@@ -992,7 +992,7 @@ esp_err_t TPS546_set_vout(float volts, int i2c_addr) {
             }
 
             //make sure operation was written correctly
-            if (smb_read_byte(PMBUS_OPERATION, &value8) != ESP_OK) {
+            if (smb_read_byte(PMBUS_OPERATION, &value8, i2c_addr) != ESP_OK) {
                 ESP_LOGE(TAG, "Could not read OPERATION");
                 return ESP_FAIL;
             }

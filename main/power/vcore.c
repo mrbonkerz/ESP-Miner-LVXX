@@ -199,15 +199,21 @@ esp_err_t VCORE_check_fault(GlobalState * global_state) {
 
     switch (global_state->device_model) {
         case DEVICE_MAX:
+        case DEVICE_LV08:
+            ESP_RETURN_ON_ERROR(TPS546_check_status(global_state, 0), TAG, "TPS546 check status failed!");
+            ESP_RETURN_ON_ERROR(TPS546_check_status(global_state, 1), TAG, "TPS546 check status failed!");
+            ESP_RETURN_ON_ERROR(TPS546_check_status(global_state, 2), TAG, "TPS546 check status failed!");
+        break;
+        case DEVICE_LV07:
         case DEVICE_ULTRA:
         case DEVICE_SUPRA:
             if (global_state->board_version >= 402 && global_state->board_version <= 499) {
-                ESP_RETURN_ON_ERROR(TPS546_check_status(global_state), TAG, "TPS546 check status failed!");
+                ESP_RETURN_ON_ERROR(TPS546_check_status(global_state, 0), TAG, "TPS546 check status failed!");
             }
             break;
         case DEVICE_GAMMA:
         case DEVICE_GAMMATURBO:
-        ESP_RETURN_ON_ERROR(TPS546_check_status(global_state), TAG, "TPS546 check status failed!");
+        ESP_RETURN_ON_ERROR(TPS546_check_status(global_state, 0), TAG, "TPS546 check status failed!");
             break;
         // case DEVICE_HEX:
         default:
