@@ -169,7 +169,7 @@ typedef struct
 
 
 /* public functions */
-esp_err_t TPS546_init(TPS546_CONFIG config, , int i2c_addr);
+esp_err_t TPS546_init(TPS546_CONFIG config, int i2c_addr);
 
 void TPS546_read_mfr_info(uint8_t *, int i2c_addr);
 void TPS546_write_entire_config(int i2c_addr);
