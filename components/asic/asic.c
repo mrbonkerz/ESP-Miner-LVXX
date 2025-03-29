@@ -268,7 +268,6 @@ esp_err_t ASIC_set_device_model(GlobalState * GLOBAL_STATE) {
 
     } else if (strcmp(GLOBAL_STATE->device_model_str, "lv07") == 0) {
         GLOBAL_STATE->asic_model = ASIC_BM1366;
-        GLOBAL_STATE->valid_model = true;
         //GLOBAL_STATE.asic_job_frequency_ms = (NONCE_SPACE / (double) (GLOBAL_STATE.POWER_MANAGEMENT_MODULE.frequency_value * BM1366_CORE_COUNT * 1000)) / (double) BITAXE_ULTRA_ASIC_COUNT; // version-rolling so Small Cores have different Nonce Space
         GLOBAL_STATE->asic_job_frequency_ms = 2000; //ms
         GLOBAL_STATE->ASIC_difficulty = BM1366_ASIC_DIFFICULTY;
@@ -278,7 +277,6 @@ esp_err_t ASIC_set_device_model(GlobalState * GLOBAL_STATE) {
 
     } else if (strcmp(GLOBAL_STATE->device_model_str, "lv08") == 0) {
         GLOBAL_STATE->asic_model = ASIC_BM1366;
-        GLOBAL_STATE->valid_model = true;
         //GLOBAL_STATE.asic_job_frequency_ms = (NONCE_SPACE / (double) (GLOBAL_STATE.POWER_MANAGEMENT_MODULE.frequency_value * BM1366_CORE_COUNT * 1000)) / (double) BITAXE_ULTRA_ASIC_COUNT; // version-rolling so Small Cores have different Nonce Space
         GLOBAL_STATE->asic_job_frequency_ms = 2000; //ms
         GLOBAL_STATE->ASIC_difficulty = BM1366_ASIC_DIFFICULTY;
