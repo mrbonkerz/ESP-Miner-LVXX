@@ -1,5 +1,10 @@
 import { eASICModel } from './enum/eASICModel';
 
+interface ISharesRejectedStat {
+    message: string;
+    count: number;
+}
+
 export interface ISystemInfo {
 
     flipscreen: number;
@@ -9,6 +14,8 @@ export interface ISystemInfo {
     current: number,
     temp: number,
     vrTemp: number,
+    maxPower: number,
+    nominalVoltage: number,
     hashRate: number,
     bestDiff: string,
     bestSessionDiff: string,
@@ -21,6 +28,7 @@ export interface ISystemInfo {
     apEnabled: number,
     sharesAccepted: number,
     sharesRejected: number,
+    sharesRejectedReasons: ISharesRejectedStat[];
     uptimeSeconds: number,
     asicCount: number,
     smallCoreCount: number,
@@ -44,5 +52,7 @@ export interface ISystemInfo {
 
     boardtemp1?: number,
     boardtemp2?: number,
-    overheat_mode: number
+    overheat_mode: number,
+    power_fault?: string
+    overclockEnabled?: number
 }

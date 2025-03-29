@@ -18,11 +18,15 @@ static TickType_t current_screen_counter;
 
 static GlobalState * GLOBAL_STATE;
 
+static lv_obj_t *asic_status_label;
+
 static lv_obj_t *hashrate_label;
 static lv_obj_t *efficiency_label;
 static lv_obj_t *difficulty_label;
 static lv_obj_t *chip_temp_label;
 
+static lv_obj_t *firmware_update_scr_filename_label;
+static lv_obj_t *firmware_update_scr_status_label;
 static lv_obj_t *ip_addr_scr_overheat_label;
 static lv_obj_t *ip_addr_scr_urls_label;
 static lv_obj_t *mining_url_scr_urls_label;
@@ -30,7 +34,8 @@ static lv_obj_t *wifi_status_label;
 
 static lv_obj_t *self_test_message_label;
 static lv_obj_t *self_test_result_label;
-static lv_obj_t *self_test_finished_label;
+static lv_obj_t *self_test_finished_label_pass;
+static lv_obj_t *self_test_finished_label_fail;
 
 static double current_hashrate;
 static float current_power;
@@ -52,14 +57,19 @@ static lv_obj_t * create_scr_self_test() {
     lv_label_set_text(label1, "BITAXE SELF TEST");
 
     self_test_message_label = lv_label_create(scr);
-
     self_test_result_label = lv_label_create(scr);
 
-    self_test_finished_label = lv_label_create(scr);
-    lv_obj_set_width(self_test_finished_label, LV_HOR_RES);
-    lv_obj_add_flag(self_test_finished_label, LV_OBJ_FLAG_HIDDEN);
-    lv_label_set_long_mode(self_test_finished_label, LV_LABEL_LONG_SCROLL_CIRCULAR);
-    lv_label_set_text(self_test_finished_label, "Hold BOOT button for 2 seconds to cancel self test, or press RESET to run again.");
+    self_test_finished_label_pass = lv_label_create(scr);
+    lv_obj_set_width(self_test_finished_label_pass, LV_HOR_RES);
+    lv_obj_add_flag(self_test_finished_label_pass, LV_OBJ_FLAG_HIDDEN);
+    lv_label_set_long_mode(self_test_finished_label_pass, LV_LABEL_LONG_SCROLL_CIRCULAR);
+    lv_label_set_text(self_test_finished_label_pass, "Press RESET button to start Bitaxe.");
+
+    self_test_finished_label_fail = lv_label_create(scr);
+    lv_obj_set_width(self_test_finished_label_fail, LV_HOR_RES);
+    lv_obj_add_flag(self_test_finished_label_fail, LV_OBJ_FLAG_HIDDEN);
+    lv_label_set_long_mode(self_test_finished_label_fail, LV_LABEL_LONG_SCROLL_CIRCULAR);
+    lv_label_set_text(self_test_finished_label_fail, "Hold BOOT button for 2 seconds to cancel self test, or press RESET to run again.");
 
     return scr;
 }
@@ -87,20 +97,17 @@ static lv_obj_t * create_scr_overheat(SystemModule * module) {
     return scr;
 }
 
-static lv_obj_t * create_scr_invalid_asic(SystemModule * module) {
+static lv_obj_t * create_scr_asic_status(SystemModule * module) {
     lv_obj_t * scr = lv_obj_create(NULL);
 
     lv_obj_set_flex_flow(scr, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_flex_align(scr, LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
 
     lv_obj_t *label1 = lv_label_create(scr);
-    lv_label_set_text(label1, "ASIC MODEL INVALID");
+    lv_label_set_text(label1, "ASIC STATUS:");
 
-    lv_obj_t *label2 = lv_label_create(scr);
-    lv_label_set_text(label2, "Wi-Fi (for setup):");
-
-    lv_obj_t *label3 = lv_label_create(scr);
-    lv_label_set_text(label3, module->ap_ssid);
+    asic_status_label = lv_label_create(scr);
+    lv_label_set_long_mode(asic_status_label, LV_LABEL_LONG_SCROLL_CIRCULAR);
 
     return scr;
 }
@@ -125,6 +132,23 @@ static lv_obj_t * create_scr_configure(SystemModule * module) {
 
     lv_obj_t *label3 = lv_label_create(scr);
     lv_label_set_text(label3, module->ap_ssid);
+
+    return scr;
+}
+
+static lv_obj_t * create_scr_ota(SystemModule * module) {
+    lv_obj_t * scr = lv_obj_create(NULL);
+
+    lv_obj_set_flex_flow(scr, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_flex_align(scr, LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
+
+    lv_obj_t *label1 = lv_label_create(scr);
+    lv_obj_set_width(label1, LV_HOR_RES);
+    lv_label_set_text(label1, "Firmware update");
+
+    firmware_update_scr_filename_label = lv_label_create(scr);
+
+    firmware_update_scr_status_label = lv_label_create(scr);
 
     return scr;
 }
@@ -232,20 +256,36 @@ static void screen_update_cb(lv_timer_t * timer)
         lv_label_set_text(self_test_message_label, self_test->message);
 
         if (self_test->finished) {
-            lv_label_set_text(self_test_result_label, self_test->result ? "TESTS PASS!" : "TESTS FAIL!");
-
-            lv_obj_remove_flag(self_test_finished_label, LV_OBJ_FLAG_HIDDEN);
+            if (self_test->result) {
+                lv_label_set_text(self_test_result_label, "TESTS PASS!");
+                lv_obj_remove_flag(self_test_finished_label_pass, LV_OBJ_FLAG_HIDDEN);
+            } else {
+                lv_label_set_text(self_test_result_label, "TESTS FAIL!");
+                lv_obj_remove_flag(self_test_finished_label_fail, LV_OBJ_FLAG_HIDDEN);
+            }
         }
 
         return;
     }
 
-    if (GLOBAL_STATE->valid_model == false) {
-        screen_show(SCR_INVALID_ASIC);
+    if (GLOBAL_STATE->SYSTEM_MODULE.is_firmware_update) {
+        if (strcmp(GLOBAL_STATE->SYSTEM_MODULE.firmware_update_filename, lv_label_get_text(firmware_update_scr_filename_label)) != 0) {
+            lv_label_set_text(firmware_update_scr_filename_label, GLOBAL_STATE->SYSTEM_MODULE.firmware_update_filename);
+        }
+        if (strcmp(GLOBAL_STATE->SYSTEM_MODULE.firmware_update_status, lv_label_get_text(firmware_update_scr_status_label)) != 0) {
+            lv_label_set_text(firmware_update_scr_status_label, GLOBAL_STATE->SYSTEM_MODULE.firmware_update_status);
+        }
+        screen_show(SCR_FIRMWARE_UPDATE);
         return;
     }
 
     SystemModule * module = &GLOBAL_STATE->SYSTEM_MODULE;
+
+    if (module->asic_status) {
+        lv_label_set_text(asic_status_label, module->asic_status);
+        screen_show(SCR_ASIC_STATUS);
+        return;
+    }
 
     if (module->overheat_mode == 1) {
         if (strcmp(module->ip_addr_str, lv_label_get_text(ip_addr_scr_overheat_label)) != 0) {
@@ -355,8 +395,9 @@ esp_err_t screen_start(void * pvParameters)
 
         screens[SCR_SELF_TEST] = create_scr_self_test();
         screens[SCR_OVERHEAT] = create_scr_overheat(module);
-        screens[SCR_INVALID_ASIC] = create_scr_invalid_asic(module);
+        screens[SCR_ASIC_STATUS] = create_scr_asic_status(module);
         screens[SCR_CONFIGURE] = create_scr_configure(module);
+        screens[SCR_FIRMWARE_UPDATE] = create_scr_ota(module);
         screens[SCR_CONNECTION] = create_scr_connection(module);
         screens[SCR_LOGO] = create_scr_logo();
         screens[SCR_URLS] = create_scr_urls(module);
