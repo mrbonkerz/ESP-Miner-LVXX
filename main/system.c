@@ -115,6 +115,8 @@ esp_err_t SYSTEM_init_peripherals(GlobalState * GLOBAL_STATE) {
     //Init the DISPLAY
     switch (GLOBAL_STATE->device_model) {
         case DEVICE_MAX:
+        case DEVICE_LV07:
+        case DEVICE_LV08:
         case DEVICE_ULTRA:
         case DEVICE_SUPRA:
         case DEVICE_GAMMA:
