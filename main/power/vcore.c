@@ -44,6 +44,22 @@ static TPS546_CONFIG TPS546_CONFIG_GAMMA = {
     .TPS546_INIT_IOUT_OC_FAULT_LIMIT = 30.00 /* A */
 };
 
+static TPS546_CONFIG TPS546_CONFIG_LVXX = {
+    /* vin voltage */
+    .TPS546_INIT_VIN_ON = 11.0,
+    .TPS546_INIT_VIN_OFF = 10.5,
+    .TPS546_INIT_VIN_UV_WARN_LIMIT = 11.0,
+    .TPS546_INIT_VIN_OV_FAULT_LIMIT = 14.0,
+    /* vout voltage */
+    .TPS546_INIT_SCALE_LOOP = 0.25,
+    .TPS546_INIT_VOUT_MIN = 1,
+    .TPS546_INIT_VOUT_MAX = 3,
+    .TPS546_INIT_VOUT_COMMAND = 1.2,
+    /* iout current */
+    .TPS546_INIT_IOUT_OC_WARN_LIMIT = 30.00, /* A */
+    .TPS546_INIT_IOUT_OC_FAULT_LIMIT = 35.00 /* A */
+};
+
 static const char *TAG = "vcore.c";
 
 esp_err_t VCORE_init(GlobalState * GLOBAL_STATE) {
@@ -52,17 +68,25 @@ esp_err_t VCORE_init(GlobalState * GLOBAL_STATE) {
         case DEVICE_ULTRA:
         case DEVICE_SUPRA:
             if (GLOBAL_STATE->board_version >= 402 && GLOBAL_STATE->board_version <= 499) {
-                ESP_RETURN_ON_ERROR(TPS546_init(TPS546_CONFIG_GAMMA), TAG, "TPS546 init failed!"); //yes, it's a gamma as far as the TPS546 is concerned
+                ESP_RETURN_ON_ERROR(TPS546_init(TPS546_CONFIG_GAMMA, 0), TAG, "TPS546 init failed!"); //yes, it's a gamma as far as the TPS546 is concerned
             } else {
                 ESP_RETURN_ON_ERROR(DS4432U_init(), TAG, "DS4432 init failed!");
                 ESP_RETURN_ON_ERROR(INA260_init(), TAG, "INA260 init failed!");
             }
             break;
         case DEVICE_GAMMA:
-            ESP_RETURN_ON_ERROR(TPS546_init(TPS546_CONFIG_GAMMA), TAG, "TPS546 init failed!");
+            ESP_RETURN_ON_ERROR(TPS546_init(TPS546_CONFIG_GAMMA, 0), TAG, "TPS546 init failed!");
             break;
         case DEVICE_GAMMATURBO:
-            ESP_RETURN_ON_ERROR(TPS546_init(TPS546_CONFIG_GAMMATURBO), TAG, "TPS546 init failed!");
+            ESP_RETURN_ON_ERROR(TPS546_init(TPS546_CONFIG_GAMMATURBO, 0), TAG, "TPS546 init failed!");
+            break;
+        case DEVICE_LV07:
+            ESP_RETURN_ON_ERROR(TPS546_init(TPS546_CONFIG_LVXX, 0), TAG, "TPS546 init failed!");
+            break;
+        case DEVICE_LV08:
+            ESP_RETURN_ON_ERROR(TPS546_init(TPS546_CONFIG_LVXX, 0), TAG, "TPS546_0 init failed!");
+            ESP_RETURN_ON_ERROR(TPS546_init(TPS546_CONFIG_LVXX, 1), TAG, "TPS546_1 init failed!");
+            ESP_RETURN_ON_ERROR(TPS546_init(TPS546_CONFIG_LVXX, 2), TAG, "TPS546_2 init failed!");
             break;
         // case DEVICE_HEX:
         default:
@@ -94,6 +118,8 @@ esp_err_t VCORE_init(GlobalState * GLOBAL_STATE) {
             break;
         case DEVICE_GAMMA:
         case DEVICE_GAMMATURBO:
+        case DEVICE_LV07:
+        case DEVICE_LV08:
             break;
         default:
     }
@@ -109,7 +135,7 @@ esp_err_t VCORE_set_voltage(float core_voltage, GlobalState * global_state)
         case DEVICE_SUPRA:
             if (global_state->board_version >= 402 && global_state->board_version <= 499) {
                 ESP_LOGI(TAG, "Set ASIC voltage = %.3fV", core_voltage);
-                ESP_RETURN_ON_ERROR(TPS546_set_vout(core_voltage), TAG, "TPS546 set voltage failed!");
+                ESP_RETURN_ON_ERROR(TPS546_set_vout(core_voltage, 0), TAG, "TPS546 set voltage failed!");
             } else {
                 ESP_LOGI(TAG, "Set ASIC voltage = %.3fV", core_voltage);
                 ESP_RETURN_ON_ERROR(DS4432U_set_voltage(core_voltage), TAG, "DS4432U set voltage failed!");
@@ -117,8 +143,15 @@ esp_err_t VCORE_set_voltage(float core_voltage, GlobalState * global_state)
             break;
         case DEVICE_GAMMA:
         case DEVICE_GAMMATURBO:
-                ESP_LOGI(TAG, "Set ASIC voltage = %.3fV", core_voltage);
-                ESP_RETURN_ON_ERROR(TPS546_set_vout(core_voltage), TAG, "TPS546 set voltage failed!");
+        case DEVICE_LV07:
+            ESP_LOGI(TAG, "Set ASIC voltage = %.3fV", core_voltage);
+            ESP_RETURN_ON_ERROR(TPS546_set_vout(core_voltage, 0), TAG, "TPS546 set voltage failed!");
+            break;
+        case DEVICE_LV08:
+            ESP_LOGI(TAG, "Set ASIC voltage = %.3fV", core_voltage);
+            ESP_RETURN_ON_ERROR(TPS546_set_vout(core_voltage, 0), TAG, "TPS546_0 set voltage failed!");
+            ESP_RETURN_ON_ERROR(TPS546_set_vout(core_voltage, 1), TAG, "TPS546_1 set voltage failed!");
+            ESP_RETURN_ON_ERROR(TPS546_set_vout(core_voltage, 2), TAG, "TPS546_2 set voltage failed!");
             break;
         // case DEVICE_HEX:
         default:
@@ -136,6 +169,10 @@ int16_t VCORE_get_voltage_mv(GlobalState * global_state) {
         case DEVICE_GAMMA:
         case DEVICE_GAMMATURBO:
             return ADC_get_vcore();
+        case DEVICE_LV07:
+            return TPS546_get_vout(0) * 1000;
+        case DEVICE_LV08:
+            return fmax(fmax(TPS546_get_vout(0), TPS546_get_vout(1)), TPS546_get_vout(2)) * 1000;
         // case DEVICE_HEX:
         default:
     }
@@ -149,12 +186,20 @@ esp_err_t VCORE_check_fault(GlobalState * global_state) {
         case DEVICE_ULTRA:
         case DEVICE_SUPRA:
             if (global_state->board_version >= 402 && global_state->board_version <= 499) {
-                ESP_RETURN_ON_ERROR(TPS546_check_status(global_state), TAG, "TPS546 check status failed!");
+                ESP_RETURN_ON_ERROR(TPS546_check_status(global_state, 0), TAG, "TPS546 check status failed!");
             }
             break;
         case DEVICE_GAMMA:
         case DEVICE_GAMMATURBO:
-        ESP_RETURN_ON_ERROR(TPS546_check_status(global_state), TAG, "TPS546 check status failed!");
+        ESP_RETURN_ON_ERROR(TPS546_check_status(global_state, 0), TAG, "TPS546 check status failed!");
+            break;
+        case DEVICE_LV07:
+            ESP_RETURN_ON_ERROR(TPS546_check_status(global_state, 0), TAG, "TPS546 check status failed!");
+            break;
+        case DEVICE_LV08:
+            ESP_RETURN_ON_ERROR(TPS546_check_status(global_state, 0), TAG, "TPS546 check status failed!");
+            ESP_RETURN_ON_ERROR(TPS546_check_status(global_state, 1), TAG, "TPS546 check status failed!");
+            ESP_RETURN_ON_ERROR(TPS546_check_status(global_state, 2), TAG, "TPS546 check status failed!");
             break;
         // case DEVICE_HEX:
         default:
@@ -172,6 +217,8 @@ const char* VCORE_get_fault_string(GlobalState * global_state) {
             }
             break;
         case DEVICE_GAMMA:
+        case DEVICE_LV07:
+        case DEVICE_LV08:
         case DEVICE_GAMMATURBO:
             return TPS546_get_error_message();
             break;

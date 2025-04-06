@@ -547,7 +547,7 @@ static esp_err_t GET_system_info(httpd_req_t * req)
     cJSON * root = cJSON_CreateObject();
     cJSON_AddNumberToObject(root, "power", GLOBAL_STATE->POWER_MANAGEMENT_MODULE.power);
     cJSON_AddNumberToObject(root, "voltage", GLOBAL_STATE->POWER_MANAGEMENT_MODULE.voltage);
-    cJSON_AddNumberToObject(root, "current", Power_get_current(GLOBAL_STATE));
+    cJSON_AddNumberToObject(root, "current", Power_get_current(GLOBAL_STATE, 0));
     cJSON_AddNumberToObject(root, "temp", GLOBAL_STATE->POWER_MANAGEMENT_MODULE.chip_temp_avg);
     cJSON_AddNumberToObject(root, "vrTemp", GLOBAL_STATE->POWER_MANAGEMENT_MODULE.vr_temp);
     cJSON_AddNumberToObject(root, "maxPower", Power_get_max_settings(GLOBAL_STATE));

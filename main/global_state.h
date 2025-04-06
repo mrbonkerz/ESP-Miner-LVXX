@@ -28,6 +28,8 @@ typedef enum
     DEVICE_SUPRA,
     DEVICE_GAMMA,
     DEVICE_GAMMATURBO,
+    DEVICE_LV07,
+    DEVICE_LV08,
 } DeviceModel;
 
 typedef enum

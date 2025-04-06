@@ -22,6 +22,7 @@ SRCS
     "./tasks/power_management_task.c"
     "./thermal/EMC2101.c"
     "./thermal/EMC2103.c"
+    "./thermal/EMC2302.c"
     "./thermal/TMP1075.c"
     "./thermal/thermal.c"
     "./power/TPS546.c"
