@@ -76,7 +76,7 @@ float Power_get_max_settings(GlobalState * GLOBAL_STATE) {
     }
 }
 
-float Power_get_current(GlobalState * GLOBAL_STATE, int i2c_addr) {
+float Power_get_current(GlobalState * GLOBAL_STATE) {
     float current = 0.0;
 
     switch (GLOBAL_STATE->device_model) {
@@ -84,7 +84,7 @@ float Power_get_current(GlobalState * GLOBAL_STATE, int i2c_addr) {
         case DEVICE_ULTRA:
         case DEVICE_SUPRA:
             if (GLOBAL_STATE->board_version >= 402 && GLOBAL_STATE->board_version <= 499) {
-                current = TPS546_get_iout(i2c_addr) * 1000.0;
+                current = TPS546_get_iout(0) * 1000.0;
             } else {
                 if (INA260_installed() == true) {
                     current = INA260_read_current();
@@ -94,8 +94,10 @@ float Power_get_current(GlobalState * GLOBAL_STATE, int i2c_addr) {
         case DEVICE_GAMMA:
         case DEVICE_GAMMATURBO:
         case DEVICE_LV07:
+            current = TPS546_get_iout(0) * 1000.0;
+            break;
         case DEVICE_LV08:
-            current = TPS546_get_iout(i2c_addr) * 1000.0;
+            current = fmax(fmax(TPS546_get_iout(0), TPS546_get_iout(1)), TPS546_get_iout(2)) * 1000.0;
             break;
         default:
     }
