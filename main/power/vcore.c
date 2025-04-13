@@ -56,8 +56,8 @@ static TPS546_CONFIG TPS546_CONFIG_LVXX = {
     .TPS546_INIT_VOUT_MAX = 3,
     .TPS546_INIT_VOUT_COMMAND = 1.25,
     /* iout current */
-    .TPS546_INIT_IOUT_OC_WARN_LIMIT = 35.00, /* A */
-    .TPS546_INIT_IOUT_OC_FAULT_LIMIT = 40.00 /* A */
+    .TPS546_INIT_IOUT_OC_WARN_LIMIT = 40.00, /* A */
+    .TPS546_INIT_IOUT_OC_FAULT_LIMIT = 45.00 /* A */
 };
 
 static const char *TAG = "vcore.c";
