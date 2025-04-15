@@ -363,7 +363,7 @@ esp_err_t TPS546_init(TPS546_CONFIG config, int i2c_addr)
     smb_write_byte(PMBUS_OPERATION, u8_value, i2c_addr);
 
     /* Make sure power is turned off until commanded */
-    u8_value = (ON_OFF_CONFIG_DELAY | ON_OFF_CONFIG_POLARITY | ON_OFF_CONFIG_CMD | ON_OFF_CONFIG_PU); //TCH's 302
+    u8_value = (ON_OFF_CONFIG_DELAY | ON_OFF_CONFIG_POLARITY | ON_OFF_CONFIG_CP | ON_OFF_CONFIG_CMD | ON_OFF_CONFIG_PU);
     ESP_LOGI(TAG, "Power config-ON_OFF_CONFIG: %02X", u8_value);
     smb_write_byte(PMBUS_ON_OFF_CONFIG, u8_value, i2c_addr);
 
@@ -513,7 +513,7 @@ void TPS546_write_entire_config(int i2c_addr)
 
     /* Phase */
     ESP_LOGI(TAG, "Setting PHASE: %02X", TPS546_INIT_PHASE);
-    //smb_write_byte(PMBUS_PHASE, TPS546_INIT_PHASE, i2c_addr); //TCH's 302
+    smb_write_byte(PMBUS_PHASE, TPS546_INIT_PHASE, i2c_addr);
 
     /* Switch frequency */
     ESP_LOGI(TAG, "Setting FREQUENCY: %dMHz", TPS546_INIT_FREQUENCY);
