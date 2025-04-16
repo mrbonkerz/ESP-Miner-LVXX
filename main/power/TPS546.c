@@ -512,8 +512,8 @@ void TPS546_write_entire_config(int i2c_addr)
     // }
 
     /* Phase */
-    ESP_LOGI(TAG, "Setting PHASE: %02X", TPS546_INIT_PHASE);
-    smb_write_byte(PMBUS_PHASE, TPS546_INIT_PHASE, i2c_addr);
+    //ESP_LOGI(TAG, "Setting PHASE: %02X", TPS546_INIT_PHASE);
+    //smb_write_byte(PMBUS_PHASE, TPS546_INIT_PHASE, i2c_addr);
 
     /* Switch frequency */
     ESP_LOGI(TAG, "Setting FREQUENCY: %dMHz", TPS546_INIT_FREQUENCY);
@@ -696,7 +696,7 @@ float TPS546_get_iout(int i2c_addr)
     float iout;
 
     //set the phase register to 0xFF to read all phases
-    smb_write_byte(PMBUS_PHASE, 0xFF, i2c_addr);
+    //smb_write_byte(PMBUS_PHASE, 0xFF, i2c_addr);
 
     /* Get current output (SLINEAR11) */
     if (smb_read_word(PMBUS_READ_IOUT, &u16_value, i2c_addr) != ESP_OK) {
@@ -710,7 +710,7 @@ float TPS546_get_iout(int i2c_addr)
     #endif
 
     //set the phase register back to the default
-    smb_write_byte(PMBUS_PHASE, TPS546_INIT_PHASE, i2c_addr);
+    //smb_write_byte(PMBUS_PHASE, TPS546_INIT_PHASE, i2c_addr);
 
         return iout;
     }
