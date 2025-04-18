@@ -102,13 +102,13 @@ components:
         - fallbackStratumUser
         - fanrpm
         - fanspeed
+        - temptarget
         - flipscreen
         - freeHeap
         - frequency
         - hashRate
         - hostname
         - idfVersion
-        - invertfanpolarity
         - invertscreen
         - isPSRAMAvailable
         - isUsingFallbackStratum
@@ -181,6 +181,9 @@ components:
         fanspeed:
           type: number
           description: Current fan speed percentage
+        temptarget:
+          type: number
+          description: Target Temperature for the PID Controller
         flipscreen:
           type: number
           description: Screen flip setting (0=normal, 1=flipped)
@@ -199,9 +202,6 @@ components:
         idfVersion:
           type: string
           description: ESP-IDF version
-        invertfanpolarity:
-          type: number
-          description: Fan polarity setting (0=normal, 1=inverted)
         invertscreen:
           type: number
           description: Screen invert setting (0=normal, 1=inverted)
@@ -392,12 +392,6 @@ components:
           enum: [0, 1]
           examples:
             - 0
-        invertfanpolarity:
-          type: integer
-          description: Whether to invert fan polarity (0=normal, 1=inverted)
-          enum: [0, 1]
-          examples:
-            - 0
         autofanspeed:
           type: integer
           description: Whether to enable automatic fan speed control (0=manual, 1=auto)
@@ -411,6 +405,13 @@ components:
           maximum: 100
           examples:
             - 80
+        temptarget:
+          type: integer
+          description: Manual Temperature Target in °C when autofanspeed is enabled
+          minimum: 0
+          maximum: 100
+          examples:
+            - 66
       additionalProperties: true
 
   responses:

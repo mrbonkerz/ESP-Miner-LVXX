@@ -4,6 +4,7 @@
 
 #include "power.h"
 #include "vcore.h"
+#include "driver/gpio.h"
 
 #include <math.h>
 

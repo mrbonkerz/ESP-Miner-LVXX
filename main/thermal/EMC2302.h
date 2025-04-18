@@ -75,7 +75,7 @@ typedef enum
 
 void EMC2302_set_fan_speed(uint8_t, float);
 uint16_t EMC2302_get_fan_speed(uint8_t);
-esp_err_t EMC2302_init(bool);
+esp_err_t EMC2302_init();
 float EMC2302_get_external_temp(void);
 uint8_t EMC2302_get_internal_temp(void);
 
