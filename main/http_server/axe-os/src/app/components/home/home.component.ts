@@ -1,8 +1,8 @@
 import { Component } from '@angular/core';
 import { interval, map, Observable, shareReplay, startWith, switchMap, tap } from 'rxjs';
 import { HashSuffixPipe } from 'src/app/pipes/hash-suffix.pipe';
-import { MiningPool } from 'src/app/services/pools/mining-pool.interface';
-import { PoolFactoryService } from 'src/app/services/pools/pool-factory.service';
+import { QuicklinkService } from 'src/app/services/quicklink.service';
+import { ShareRejectionExplanationService } from 'src/app/services/share-rejection-explanation.service';
 import { SystemService } from 'src/app/services/system.service';
 import { ThemeService } from 'src/app/services/theme.service';
 import { ISystemInfo } from 'src/models/ISystemInfo';
@@ -30,7 +30,6 @@ export class HomeComponent {
   public maxTemp: number = 75;
   public maxFrequency: number = 800;
 
-  public pool!: MiningPool;
   public quickLink$!: Observable<string | undefined>;
 
   public activePoolURL!: string;
@@ -41,7 +40,8 @@ export class HomeComponent {
   constructor(
     private systemService: SystemService,
     private themeService: ThemeService,
-    private poolFactory: PoolFactoryService
+    private quickLinkService: QuicklinkService,
+    private shareRejectReasonsService: ShareRejectionExplanationService
   ) {
     this.initializeChart();
 
@@ -62,8 +62,8 @@ export class HomeComponent {
     if (this.chartData && this.chartData.datasets) {
       this.chartData.datasets[0].backgroundColor = primaryColor + '30';
       this.chartData.datasets[0].borderColor = primaryColor;
-      this.chartData.datasets[1].backgroundColor = primaryColor + '30';
-      this.chartData.datasets[1].borderColor = primaryColor + '60';
+      this.chartData.datasets[1].backgroundColor = textColorSecondary;
+      this.chartData.datasets[1].borderColor = textColorSecondary;
     }
 
     // Update chart options
@@ -230,8 +230,6 @@ export class HomeComponent {
         this.activePoolURL = isFallback ? info.fallbackStratumURL : info.stratumURL;
         this.activePoolUser = isFallback ? info.fallbackStratumUser : info.stratumUser;
         this.activePoolPort = isFallback ? info.fallbackStratumPort : info.stratumPort;
-        
-        this.pool = this.poolFactory.getPoolForUrl(this.activePoolURL);        
       }),
       map(info => {
         info.power = parseFloat(info.power.toFixed(1))
@@ -254,18 +252,21 @@ export class HomeComponent {
       map(info => {
         const url = info.isUsingFallbackStratum ? info.fallbackStratumURL : info.stratumURL;
         const user = info.isUsingFallbackStratum ? info.fallbackStratumUser : info.stratumUser;
-        const pool = this.poolFactory.getPoolForUrl(url);
-        return pool.getQuickLink(url, user);
+        return this.quickLinkService.getQuickLink(url, user);
       })
     );
   }
 
   getRejectionExplanation(reason: string): string | null {
-    return this.pool?.getRejectionExplanation(reason) ?? null;
+    return this.shareRejectReasonsService.getExplanation(reason);
   }
 
-  getSortedRejectedReasons(info: ISystemInfo): ISystemInfo['sharesRejectedReasons'] {
+  getSortedRejectionReasons(info: ISystemInfo): ISystemInfo['sharesRejectedReasons'] {
     return [...(info.sharesRejectedReasons ?? [])].sort((a, b) => b.count - a.count);
+  }
+
+  trackByReason(_index: number, item: { message: string, count: number }) {
+    return item.message; //Track only by message
   }
 
   public calculateAverage(data: number[]): number {
