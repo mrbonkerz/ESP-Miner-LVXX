@@ -87,7 +87,7 @@ void POWER_MANAGEMENT_task(void * pvParameters)
         //overheat mode if the voltage regulator or ASIC is too hot
         if ((power_management->vr_temp > TPS546_THROTTLE_TEMP || power_management->chip_temp_avg > THROTTLE_TEMP) && (power_management->frequency_value > 50 || power_management->voltage > 1000)) {
             ESP_LOGE(TAG, "OVERHEAT! VR: %fC ASIC %fC", power_management->vr_temp, power_management->chip_temp_avg );
-            float fs = (float) nvs_config_get_u16(NVS_CONFIG_FAN_SPEED, 100);
+            float fs = (float) nvs_config_get_u16(NVS_CONFIG_FAN_SPEED, 40);
             power_management->fan_perc = fs;
             Thermal_set_fan_percent(GLOBAL_STATE->device_model, fs / 100.0);
 
@@ -111,17 +111,17 @@ void POWER_MANAGEMENT_task(void * pvParameters)
                 Thermal_set_fan_percent(GLOBAL_STATE->device_model, pid_output / 100.0);
                 ESP_LOGI(TAG, "Temp: %.1f°C, SetPoint: %.1f°C, Output: %.1f%%", pid_input, pid_setPoint, pid_output);
             } else {
-                // Set fan to 70% in AP mode when temperature reading is invalid
+                // Set fan to 40% in AP mode when temperature reading is invalid
                 if (GLOBAL_STATE->SYSTEM_MODULE.ap_enabled) {
-                    ESP_LOGW(TAG, "AP mode with invalid temperature reading: %.1f°C - Setting fan to 70%%", power_management->chip_temp_avg);
-                    power_management->fan_perc = 70;
-                    Thermal_set_fan_percent(GLOBAL_STATE->device_model, 0.7);
+                    ESP_LOGW(TAG, "AP mode with invalid temperature reading: %.1f°C - Setting fan to 40%%", power_management->chip_temp_avg);
+                    power_management->fan_perc = 40;
+                    Thermal_set_fan_percent(GLOBAL_STATE->device_model, 0.4);
                 } else {
                     ESP_LOGW(TAG, "Ignoring invalid temperature reading: %.1f°C", power_management->chip_temp_avg);
                 }
             }
         } else {
-            float fs = (float) nvs_config_get_u16(NVS_CONFIG_FAN_SPEED, 100);
+            float fs = (float) nvs_config_get_u16(NVS_CONFIG_FAN_SPEED, 40);
             power_management->fan_perc = fs;
             Thermal_set_fan_percent(GLOBAL_STATE->device_model, (float) fs / 100.0);
         }
