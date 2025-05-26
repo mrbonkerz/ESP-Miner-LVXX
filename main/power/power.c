@@ -10,7 +10,7 @@
 
 float Power_get_current(GlobalState * GLOBAL_STATE)
 {
-    if (GLOBAL_STATE->DEVICE_CONFIG.TPS546) {
+    if (GLOBAL_STATE->DEVICE_CONFIG.TPS546 || GLOBAL_STATE->DEVICE_CONFIG.TPS546_1) {
         return TPS546_get_iout(0) * 1000.0;
     }
     if (GLOBAL_STATE->DEVICE_CONFIG.TPS546_3) {
@@ -31,7 +31,7 @@ float Power_get_power(GlobalState * GLOBAL_STATE)
     float power = 0.0;
     float current = 0.0;
 
-    if (GLOBAL_STATE->DEVICE_CONFIG.TPS546) {
+    if (GLOBAL_STATE->DEVICE_CONFIG.TPS546 || GLOBAL_STATE->DEVICE_CONFIG.TPS546_1) {
         current = TPS546_get_iout(0) * 1000.0;
         // calculate regulator power (in milliwatts)
         power = (TPS546_get_vout(0) * current) / 1000.0;
@@ -56,7 +56,7 @@ float Power_get_power(GlobalState * GLOBAL_STATE)
 
 float Power_get_input_voltage(GlobalState * GLOBAL_STATE)
 {
-    if (GLOBAL_STATE->DEVICE_CONFIG.TPS546) {
+    if (GLOBAL_STATE->DEVICE_CONFIG.TPS546 || GLOBAL_STATE->DEVICE_CONFIG.TPS546_1) {
         return TPS546_get_vin(0) * 1000.0;
     }
     if (GLOBAL_STATE->DEVICE_CONFIG.TPS546_3) {
@@ -74,7 +74,7 @@ float Power_get_input_voltage(GlobalState * GLOBAL_STATE)
 
 float Power_get_vreg_temp(GlobalState * GLOBAL_STATE)
 {
-    if (GLOBAL_STATE->DEVICE_CONFIG.TPS546) {
+    if (GLOBAL_STATE->DEVICE_CONFIG.TPS546 || GLOBAL_STATE->DEVICE_CONFIG.TPS546_1) {
         return TPS546_get_temperature(0);
     }
     if (GLOBAL_STATE->DEVICE_CONFIG.TPS546_3) {

@@ -345,7 +345,7 @@ esp_err_t TPS546_init(TPS546_CONFIG config, int i2c_addr)
 
     ESP_LOGI(TAG, "Initializing the core voltage regulator");
 
-    ESP_RETURN_ON_ERROR(i2c_bitaxe_add_device(TPS546_I2CADDR, &tps546_i2c_handle[i2c_addr], TAG), TAG, "Failed to add TPS546 I2C");
+    ESP_RETURN_ON_ERROR(i2c_bitaxe_add_device(TPS546_I2C_ADDR[i2c_addr], &tps546_i2c_handle[i2c_addr], TAG), TAG, "Failed to add TPS546 I2C");
 
     /* Establish communication with regulator */
     smb_read_block(PMBUS_IC_DEVICE_ID, data, 6, i2c_addr); //the DEVICE_ID block first byte is the length.

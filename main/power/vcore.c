@@ -96,6 +96,16 @@ esp_err_t VCORE_init(GlobalState * GLOBAL_STATE) {
                 break;
         }
     }
+    if (GLOBAL_STATE->DEVICE_CONFIG.TPS546_1 || GLOBAL_STATE->DEVICE_CONFIG.TPS546_3) {
+        switch (GLOBAL_STATE->DEVICE_CONFIG.family.asic_count) {
+            case 2:
+                ESP_RETURN_ON_ERROR(TPS546_init(TPS546_CONFIG_LV07, 0), TAG, "TPS546 init failed!");
+                break;
+            case 9:
+                ESP_RETURN_ON_ERROR(TPS546_init(TPS546_CONFIG_LV08, 0), TAG, "TPS546 init failed!");
+                break;
+        }
+    }
 
     if (GLOBAL_STATE->DEVICE_CONFIG.plug_sense) {
         gpio_config_t barrel_jack_conf = {
