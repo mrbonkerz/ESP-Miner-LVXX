@@ -109,7 +109,7 @@ static const DeviceConfig default_configs[] = {
     { .board_version = "601",  .family = FAMILY_GAMMA,       .display = SSD1306, .EMC2101 = true, .emc_ideality_factor = 0x24, .emc_beta_compensation = 0x00, .TPS546 = true,                                                           .power_consumption_target = 19, },
     { .board_version = "602",  .family = FAMILY_GAMMA,       .display = SSD1306, .EMC2101 = true, .emc_ideality_factor = 0x24, .emc_beta_compensation = 0x00, .TPS546 = true,                                                           .power_consumption_target = 22, },
     { .board_version = "800",  .family = FAMILY_GAMMA_TURBO, .display = SSD1306, .EMC2103 = true,                                                             .TPS546 = true,                                                           .power_consumption_target = 12, },
-    { .board_version = "302",  .family = FAMILY_LV07,        .display = SSD1306, .EMC2302 = true,                                                             .TPS546_1 = true, .TMP1075 = true,                                        .power_consumption_target = 12, },
+    { .board_version = "301",  .family = FAMILY_LV07,        .display = SSD1306, .EMC2302 = true,                                                             .TPS546_1 = true, .TMP1075 = true,                                        .power_consumption_target = 12, },
     { .board_version = "302",  .family = FAMILY_LV08,        .display = SSD1306, .EMC2302 = true,                                                             .TPS546_3 = true, .TMP1075 = true,                                        .power_consumption_target = 12, },
 };
 
