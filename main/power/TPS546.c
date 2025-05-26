@@ -11,7 +11,7 @@
 #include "i2c_bitaxe.h"
 #include "TPS546.h"
 
-//#define DEBUG_TPS546_MEAS 1 //uncomment to debug TPS546 measurements
+#define DEBUG_TPS546_MEAS 1 //uncomment to debug TPS546 measurements
 //#define DEBUG_TPS546_STATUS 1 //uncomment to debug TPS546 status bits
 
 #define I2C_MASTER_NUM 0 /*!< I2C master i2c port number, the number of i2c peripheral interfaces available will depend on the chip */
@@ -680,7 +680,7 @@ float TPS546_get_vin(int i2c_addr)
     } else {
         vin = slinear11_2_float(u16_value);
         #ifdef DEBUG_TPS546_MEAS
-        ESP_LOGI(TAG, "Got Vin: %2.3f V", vin);
+        ESP_LOGI(TAG, "TPS546_%i - Got Vin: %2.3f V", i2c_addr, vin);
         #endif
         return vin;
     }    
@@ -702,7 +702,7 @@ float TPS546_get_iout(int i2c_addr)
         iout = slinear11_2_float(u16_value);
 
     #ifdef DEBUG_TPS546_MEAS
-        ESP_LOGI(TAG, "Got Iout: %2.3f A", iout);
+        ESP_LOGI(TAG, "TPS546_%i - Got Iout: %2.3f A", i2c_addr, iout);
     #endif
 
     //set the phase register back to the default
@@ -724,7 +724,7 @@ float TPS546_get_vout(int i2c_addr)
     } else {
         vout = ulinear16_2_float(u16_value, i2c_addr);
     #ifdef DEBUG_TPS546_MEAS
-        ESP_LOGI(TAG, "Got Vout: %2.3f V", vout);
+        ESP_LOGI(TAG, "TPS546_%i - Got Vout: %2.3f V", i2c_addr, vout);\
     #endif
         return vout;
     }
