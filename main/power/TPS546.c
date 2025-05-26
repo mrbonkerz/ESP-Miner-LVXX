@@ -724,7 +724,7 @@ float TPS546_get_vout(int i2c_addr)
     } else {
         vout = ulinear16_2_float(u16_value, i2c_addr);
     #ifdef DEBUG_TPS546_MEAS
-        ESP_LOGI(TAG, "TPS546_%i - Got Vout: %2.3f V", i2c_addr, vout);\
+        ESP_LOGI(TAG, "TPS546_%i - Got Vout: %2.3f V", i2c_addr, vout);
     #endif
         return vout;
     }
