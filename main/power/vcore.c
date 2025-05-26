@@ -153,6 +153,13 @@ esp_err_t VCORE_set_voltage(float core_voltage, GlobalState * GLOBAL_STATE)
 
 int16_t VCORE_get_voltage_mv(GlobalState * GLOBAL_STATE) 
 {
+    // TEMP LVXX implementation
+    if (GLOBAL_STATE->DEVICE_CONFIG.TPS546_1) {
+        return TPS546_get_vout(0) * 1000;
+    }
+    if (GLOBAL_STATE->DEVICE_CONFIG.TPS546_3) {
+        return fmax(fmax(TPS546_get_vout(0), TPS546_get_vout(1)), TPS546_get_vout(2)) * 1000;
+    }
     // TODO: What about hex?
     return ADC_get_vcore();
 }

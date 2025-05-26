@@ -334,8 +334,8 @@ static uint16_t float_2_ulinear16(float value, int i2c_addr)
 esp_err_t TPS546_init(TPS546_CONFIG config, int i2c_addr)
 {
 	uint8_t data[7];
-    uint8_t u8_value;
-    uint16_t u16_value;
+    uint8_t u8_value = 0;
+    uint16_t u16_value = 0;
     uint8_t read_mfr_revision[4];
     int temp;
     uint8_t comp_config[5];
@@ -634,7 +634,7 @@ void TPS546_write_entire_config(int i2c_addr)
 
 int TPS546_get_frequency(int i2c_addr)
 {
-    uint16_t value;
+    uint16_t value = 0;
     int freq;
 
     smb_read_word(PMBUS_FREQUENCY_SWITCH, &value, i2c_addr);
@@ -645,7 +645,7 @@ int TPS546_get_frequency(int i2c_addr)
 
 void TPS546_set_frequency(int newfreq, int i2c_addr)
 {
-    uint16_t value;
+    uint16_t value = 0;
     //int freq;
 
     ESP_LOGI(TAG, "Writing new frequency: %d", newfreq);
@@ -660,7 +660,7 @@ void TPS546_set_frequency(int newfreq, int i2c_addr)
 
 int TPS546_get_temperature(int i2c_addr)
 {
-    uint16_t value;
+    uint16_t value = 0;
     int temp;
 
     smb_read_word(PMBUS_READ_TEMPERATURE_1, &value, i2c_addr);
@@ -670,7 +670,7 @@ int TPS546_get_temperature(int i2c_addr)
 
 float TPS546_get_vin(int i2c_addr)
 {
-    uint16_t u16_value;
+    uint16_t u16_value = 0;
     float vin;
 
     /* Get voltage input (ULINEAR16) */
@@ -688,7 +688,7 @@ float TPS546_get_vin(int i2c_addr)
 
 float TPS546_get_iout(int i2c_addr)
 {
-    uint16_t u16_value;
+    uint16_t u16_value = 0;
     float iout;
 
     //set the phase register to 0xFF to read all phases
@@ -714,7 +714,7 @@ float TPS546_get_iout(int i2c_addr)
 
 float TPS546_get_vout(int i2c_addr)
 {
-    uint16_t u16_value;
+    uint16_t u16_value = 0;
     float vout;
 
     /* Get voltage output (ULINEAR16) */
@@ -1010,7 +1010,7 @@ esp_err_t TPS546_set_vout(float volts, int i2c_addr) {
 
 void TPS546_show_voltage_settings(int i2c_addr)
 {
-    uint16_t u16_value;
+    uint16_t u16_value = 0;
     uint8_t u8_value;
     float f_value;
 

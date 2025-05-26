@@ -103,14 +103,7 @@ esp_err_t SYSTEM_init_peripherals(GlobalState * GLOBAL_STATE) {
     // Ensure overheat_mode config exists
     ESP_RETURN_ON_ERROR(ensure_overheat_mode_config(), TAG, "Failed to ensure overheat_mode config");
 
-    //Init the DISPLAY
-    if (GLOBAL_STATE->DEVICE_CONFIG.display != NONE) {
-        if (display_init(GLOBAL_STATE) != ESP_OK || !GLOBAL_STATE->SYSTEM_MODULE.is_screen_active) {
-            ESP_LOGW(TAG, "OLED init failed!");
-        } else {
-            ESP_LOGI(TAG, "OLED init success!");
-        }
-    }
+    ESP_RETURN_ON_ERROR(display_init(GLOBAL_STATE), TAG, "Display init failed!");
 
     ESP_RETURN_ON_ERROR(input_init(screen_next, toggle_wifi_softap), TAG, "Input init failed!");
 
@@ -311,7 +304,7 @@ static void _suffix_string(uint64_t val, char * buf, size_t bufsiz, int sigdigit
 
     if (!sigdigits) {
         if (decimal)
-            snprintf(buf, bufsiz, "%.3f%s", dval, suffix);
+            snprintf(buf, bufsiz, "%.2f%s", dval, suffix);
         else
             snprintf(buf, bufsiz, "%d%s", (unsigned int) dval, suffix);
     } else {
