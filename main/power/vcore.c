@@ -103,6 +103,8 @@ esp_err_t VCORE_init(GlobalState * GLOBAL_STATE) {
                 break;
             case 9:
                 ESP_RETURN_ON_ERROR(TPS546_init(TPS546_CONFIG_LV08, 0), TAG, "TPS546 init failed!");
+                ESP_RETURN_ON_ERROR(TPS546_init(TPS546_CONFIG_LV08, 1), TAG, "TPS546 init failed!");
+                ESP_RETURN_ON_ERROR(TPS546_init(TPS546_CONFIG_LV08, 2), TAG, "TPS546 init failed!");
                 break;
         }
     }
@@ -134,8 +136,13 @@ esp_err_t VCORE_set_voltage(float core_voltage, GlobalState * GLOBAL_STATE)
     if (GLOBAL_STATE->DEVICE_CONFIG.DS4432U) {
         ESP_RETURN_ON_ERROR(DS4432U_set_voltage(core_voltage), TAG, "DS4432U set voltage failed!");
     }
-    if (GLOBAL_STATE->DEVICE_CONFIG.TPS546) {
+    if (GLOBAL_STATE->DEVICE_CONFIG.TPS546 || GLOBAL_STATE->DEVICE_CONFIG.TPS546_1) {
         ESP_RETURN_ON_ERROR(TPS546_set_vout(core_voltage, 0), TAG, "TPS546 set voltage failed!");
+    }
+    if (GLOBAL_STATE->DEVICE_CONFIG.TPS546_3) {
+        ESP_RETURN_ON_ERROR(TPS546_set_vout(core_voltage, 0), TAG, "TPS546 set voltage failed!");
+        ESP_RETURN_ON_ERROR(TPS546_set_vout(core_voltage, 1), TAG, "TPS546 set voltage failed!");
+        ESP_RETURN_ON_ERROR(TPS546_set_vout(core_voltage, 2), TAG, "TPS546 set voltage failed!");
     }
     if (core_voltage == 0.0f && GLOBAL_STATE->DEVICE_CONFIG.asic_enable) {
         gpio_set_level(GPIO_ASIC_ENABLE, 1);
@@ -152,14 +159,14 @@ int16_t VCORE_get_voltage_mv(GlobalState * GLOBAL_STATE)
 
 esp_err_t VCORE_check_fault(GlobalState * GLOBAL_STATE) 
 {
-    if (GLOBAL_STATE->DEVICE_CONFIG.TPS546) {
+    if (GLOBAL_STATE->DEVICE_CONFIG.TPS546 || GLOBAL_STATE->DEVICE_CONFIG.TPS546_1 || GLOBAL_STATE->DEVICE_CONFIG.TPS546_3) {
         ESP_RETURN_ON_ERROR(TPS546_check_status(GLOBAL_STATE, 0), TAG, "TPS546 check status failed!");
     }
     return ESP_OK;
 }
 
 const char* VCORE_get_fault_string(GlobalState * GLOBAL_STATE) {
-    if (GLOBAL_STATE->DEVICE_CONFIG.TPS546) {
+    if (GLOBAL_STATE->DEVICE_CONFIG.TPS546 || GLOBAL_STATE->DEVICE_CONFIG.TPS546_1 || GLOBAL_STATE->DEVICE_CONFIG.TPS546_3) {
         return TPS546_get_error_message();
     }
     return NULL;
