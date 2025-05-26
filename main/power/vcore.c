@@ -45,6 +45,38 @@ static TPS546_CONFIG TPS546_CONFIG_GAMMA = {
     .TPS546_INIT_IOUT_OC_FAULT_LIMIT = 30.00 /* A */
 };
 
+static TPS546_CONFIG TPS546_CONFIG_LV07 = {
+    /* vin voltage */
+    .TPS546_INIT_VIN_ON = 11.5,
+    .TPS546_INIT_VIN_OFF = 11.0,
+    .TPS546_INIT_VIN_UV_WARN_LIMIT = 11.0,
+    .TPS546_INIT_VIN_OV_FAULT_LIMIT = 14.0,
+    /* vout voltage */
+    .TPS546_INIT_SCALE_LOOP = 0.25,
+    .TPS546_INIT_VOUT_MIN = 1,
+    .TPS546_INIT_VOUT_MAX = 3,
+    .TPS546_INIT_VOUT_COMMAND = 1.2,
+    /* iout current */
+    .TPS546_INIT_IOUT_OC_WARN_LIMIT = 35.00, /* A */
+    .TPS546_INIT_IOUT_OC_FAULT_LIMIT = 40.00 /* A */
+};
+
+static TPS546_CONFIG TPS546_CONFIG_LV08 = {
+    /* vin voltage */
+    .TPS546_INIT_VIN_ON = 11.5,
+    .TPS546_INIT_VIN_OFF = 11.0,
+    .TPS546_INIT_VIN_UV_WARN_LIMIT = 11.0,
+    .TPS546_INIT_VIN_OV_FAULT_LIMIT = 14.0,
+    /* vout voltage */
+    .TPS546_INIT_SCALE_LOOP = 0.125,
+    .TPS546_INIT_VOUT_MIN = 1,
+    .TPS546_INIT_VOUT_MAX = 4,
+    .TPS546_INIT_VOUT_COMMAND = 3.6,\
+    /* iout current */
+    .TPS546_INIT_IOUT_OC_WARN_LIMIT = 40.00, /* A */
+    .TPS546_INIT_IOUT_OC_FAULT_LIMIT = 45.00 /* A */
+};
+
 static const char *TAG = "vcore.c";
 
 esp_err_t VCORE_init(GlobalState * GLOBAL_STATE) {
@@ -57,10 +89,10 @@ esp_err_t VCORE_init(GlobalState * GLOBAL_STATE) {
     if (GLOBAL_STATE->DEVICE_CONFIG.TPS546) {
         switch (GLOBAL_STATE->DEVICE_CONFIG.family.asic_count) {
             case 1:
-                ESP_RETURN_ON_ERROR(TPS546_init(TPS546_CONFIG_GAMMA), TAG, "TPS546 init failed!");
+                ESP_RETURN_ON_ERROR(TPS546_init(TPS546_CONFIG_GAMMA, 0), TAG, "TPS546 init failed!");
                 break;
             case 2:
-                ESP_RETURN_ON_ERROR(TPS546_init(TPS546_CONFIG_GAMMATURBO), TAG, "TPS546 init failed!");
+                ESP_RETURN_ON_ERROR(TPS546_init(TPS546_CONFIG_GAMMATURBO, 0), TAG, "TPS546 init failed!");
                 break;
         }
     }
@@ -93,7 +125,7 @@ esp_err_t VCORE_set_voltage(float core_voltage, GlobalState * GLOBAL_STATE)
         ESP_RETURN_ON_ERROR(DS4432U_set_voltage(core_voltage), TAG, "DS4432U set voltage failed!");
     }
     if (GLOBAL_STATE->DEVICE_CONFIG.TPS546) {
-        ESP_RETURN_ON_ERROR(TPS546_set_vout(core_voltage), TAG, "TPS546 set voltage failed!");
+        ESP_RETURN_ON_ERROR(TPS546_set_vout(core_voltage, 0), TAG, "TPS546 set voltage failed!");
     }
     if (core_voltage == 0.0f && GLOBAL_STATE->DEVICE_CONFIG.asic_enable) {
         gpio_set_level(GPIO_ASIC_ENABLE, 1);
@@ -111,7 +143,7 @@ int16_t VCORE_get_voltage_mv(GlobalState * GLOBAL_STATE)
 esp_err_t VCORE_check_fault(GlobalState * GLOBAL_STATE) 
 {
     if (GLOBAL_STATE->DEVICE_CONFIG.TPS546) {
-        ESP_RETURN_ON_ERROR(TPS546_check_status(GLOBAL_STATE), TAG, "TPS546 check status failed!");
+        ESP_RETURN_ON_ERROR(TPS546_check_status(GLOBAL_STATE, 0), TAG, "TPS546 check status failed!");
     }
     return ESP_OK;
 }

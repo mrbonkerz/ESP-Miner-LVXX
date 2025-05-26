@@ -169,22 +169,22 @@ typedef struct
 
 
 /* public functions */
-esp_err_t TPS546_init(TPS546_CONFIG config);
+esp_err_t TPS546_init(TPS546_CONFIG config, int i2c_addr);
 
-void TPS546_read_mfr_info(uint8_t *);
-void TPS546_write_entire_config(void);
-int TPS546_get_frequency(void);
-void TPS546_set_frequency(int);
-int TPS546_get_temperature(void);
-float TPS546_get_vin(void);
-float TPS546_get_iout(void);
-float TPS546_get_vout(void);
-esp_err_t TPS546_set_vout(float volts);
-void TPS546_show_voltage_settings(void);
-void TPS546_print_status(void);
+void TPS546_read_mfr_info(uint8_t *, int i2c_addr);
+void TPS546_write_entire_config(int i2c_addr);
+int TPS546_get_frequency(int i2c_addr);
+void TPS546_set_frequency(int, int i2c_addr);
+int TPS546_get_temperature(int i2c_addr);
+float TPS546_get_vin(int i2c_addr);
+float TPS546_get_iout(int i2c_addr);
+float TPS546_get_vout(int i2c_addr);
+esp_err_t TPS546_set_vout(float volts, int i2c_addr);
+void TPS546_show_voltage_settings(int i2c_addr);
+void TPS546_print_status(int i2c_addr);
 
-esp_err_t TPS546_check_status(GlobalState * global_state);
-esp_err_t TPS546_clear_faults(void);
+esp_err_t TPS546_check_status(GlobalState * global_state, int i2c_addr);
+esp_err_t TPS546_clear_faults(int i2c_addr);
 
 const char* TPS546_get_error_message(void); //Get the current TPS error message
 

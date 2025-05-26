@@ -6,6 +6,8 @@
 
 #include "EMC2101.h"
 #include "EMC2103.h"
+#include "EMC2302.h"
+#include "TMP1075.h"
 #include "global_state.h"
 
 esp_err_t Thermal_init(DeviceConfig device_config);

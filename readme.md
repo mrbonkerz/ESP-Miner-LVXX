@@ -1,3 +1,36 @@
+# Lucky Miner Support
+If you're looking to unlock your Lucky Miner, you've come to the right fork. This version of Skot's ESP-Miner firmware, kept as close to the original as possible, is adapted to work with LV07/LV08 and potentially future LVXX miners.
+
+![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/mrbonkerz/esp-miner-lvxx/total)
+![GitHub commit activity](https://img.shields.io/github/commit-activity/t/mrbonkerz/esp-miner-lvxx)
+![GitHub Release](https://img.shields.io/github/v/release/mrbonkerz/esp-miner-lvxx?include_prereleases&label=ESP-Miner-LVXX&color=yellowgreen)
+![GitHub Release](https://img.shields.io/github/v/release/skot/esp-miner?include_prereleases&label=ESP-Miner&color=blue)
+
+# Lucky Miner Flashing
+
+Using a CP2104 USB to TTL Flasher. The 6 pins are located near the esp32.
+
+![alt text](https://i.ibb.co/Z6yPfGJS/Screenshot-2025-03-18-at-11-06-57-AM.jpg)
+
+1. Hardware Connections:
+	 - 	Connect GND on the CP2104 to GND on the LV08.
+	 - 	Connect RX on the CP2104 to TX on the LV08.
+	 - 	Connect TX on the CP2104 to RX on the LV08.
+
+2. Entering Programming Mode:
+   -	Power up the LV08.
+	 - 	Short the GND and IO0 pins on the LV08.
+	 - 	While keeping them shorted, press the reset button on the LV08.
+	 - 	After pressing reset, remove the short between GND and IO0.
+
+3. Flashing the Unlocked LV08 Factory Firmware with any of the following tools
+	 - 	[Bitaxetool](https://github.com/bitaxeorg/ESP-Miner?tab=readme-ov-file#flashing) (bitaxetool --firmware ./esp-miner-factory-lvxx-vx.x.x-x.x.x.bin)
+	 - 	[ESPTool](https://docs.espressif.com/projects/esptool/en/latest/esp32/installation.html) (esptool.py --port PORT --baud 230400 write_flash 0x000000 ./esp-miner-factory-lvxx-vx.x.x-x.x.x.bin)
+	 - 	[Web Adafruit ESPTool](https://adafruit.github.io/Adafruit_WebSerial_ESPTool/) (offset 0x000000)
+
+
+#
+
 [![](https://dcbadge.vercel.app/api/server/3E8ca2dkcC)](https://discord.gg/3E8ca2dkcC)
 
 ![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/skot/esp-miner/total)
