@@ -343,7 +343,7 @@ esp_err_t TPS546_init(TPS546_CONFIG config, int i2c_addr)
 
     tps546_config = config;
 
-    ESP_LOGI(TAG, "Initializing the core voltage regulator");
+    ESP_LOGI(TAG, "Initializing the core voltage regulator with TPS546_%i", i2c_addr);
 
     ESP_RETURN_ON_ERROR(i2c_bitaxe_add_device(TPS546_I2C_ADDR[i2c_addr], &tps546_i2c_handle[i2c_addr], TAG), TAG, "Failed to add TPS546 I2C");
 

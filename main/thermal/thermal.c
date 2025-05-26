@@ -17,9 +17,9 @@ esp_err_t Thermal_init(DeviceConfig device_config)
         return EMC2103_init();
     }
     if (device_config.EMC2302) {
-        esp_err_t res = TMP1075_init();
+        esp_err_t res = EMC2302_init();
         if (res == ESP_OK) {
-            return EMC2302_init();
+            return TMP1075_init();
         }
         return res;
     }
