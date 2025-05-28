@@ -32,8 +32,8 @@
 #define EMC2302_FAN1_DRV_FAIL_HIGH 0x3B ///< Fan 1 drive fail band high byte
 #define EMC2302_TACH1_TARGET_LSB 0x3C   ///< Tach 1 target low byte
 #define EMC2302_TACH1_TARGET_MSB 0x3D   ///< Tach 1 target high byte
-#define EMC2302_TACH1_LSB 0x3E          ///< Tach 1 reading low byte
-#define EMC2302_TACH1_MSB 0x3F          ///< Tach 1 reading high byte
+#define EMC2302_TACH1_LSB 0x3F          ///< Tach 1 reading low byte
+#define EMC2302_TACH1_MSB 0x3E          ///< Tach 1 reading high byte
 
 #define EMC2302_FAN2_SETTING 0x40       ///< Fan 2 setting
 #define EMC2302_PWM2_DIVIDE 0x41        ///< PWM 2 divider
@@ -48,8 +48,8 @@
 #define EMC2302_FAN2_DRV_FAIL_HIGH 0x4B ///< Fan 2 drive fail band high byte
 #define EMC2302_TACH2_TARGET_LSB 0x4C   ///< Tach 2 target low byte
 #define EMC2302_TACH2_TARGET_MSB 0x4D   ///< Tach 2 target high byte
-#define EMC2302_TACH2_LSB 0x4E          ///< Tach 2 reading low byte
-#define EMC2302_TACH2_MSB 0x4F          ///< Tach 2 reading high byte
+#define EMC2302_TACH2_LSB 0x4F          ///< Tach 2 reading low byte
+#define EMC2302_TACH2_MSB 0x4E          ///< Tach 2 reading high byte
 
 #define EMC2302_FAN_RPM_NUMERATOR 3932160 ///< Conversion unit to convert LSBs to fan RPM
 #define _TEMP_LSB 0.125                   ///< single bit value for internal temperature readings
