@@ -102,8 +102,8 @@ static const DeviceConfig default_configs[] = {
     { .board_version = "601",  .family = FAMILY_GAMMA,       .EMC2101 = true, .emc_ideality_factor = 0x24, .emc_beta_compensation = 0x00, .temp_offset = 5,   .TPS546 = true,                                                           .power_consumption_target = 19, },
     { .board_version = "602",  .family = FAMILY_GAMMA,       .EMC2101 = true, .emc_ideality_factor = 0x24, .emc_beta_compensation = 0x00, .temp_offset = 5,   .TPS546 = true,                                                           .power_consumption_target = 22, },
     { .board_version = "800",  .family = FAMILY_GAMMA_TURBO, .EMC2103 = true,                                                             .temp_offset = -10, .TPS546 = true,                                                           .power_consumption_target = 12, },
-    { .board_version = "301",  .family = FAMILY_LV07,        .EMC2302 = true,                                                             .TPS546_1 = true, .TMP1075 = true,                                        .power_consumption_target = 12, },
-    { .board_version = "302",  .family = FAMILY_LV08,        .EMC2302 = true,                                                             .TPS546_3 = true, .TMP1075 = true,                                        .power_consumption_target = 12, },
+    { .board_version = "301",  .family = FAMILY_LV07,        .EMC2302 = true,                                                             .temp_offset = 5,   .TPS546_1 = true, .TMP1075 = true,                                        .power_consumption_target = 12, },
+    { .board_version = "302",  .family = FAMILY_LV08,        .EMC2302 = true,                                                             .temp_offset = 5,   .TPS546_3 = true, .TMP1075 = true,                                        .power_consumption_target = 12, },
 };
 
 esp_err_t device_config_init(void * pvParameters);
