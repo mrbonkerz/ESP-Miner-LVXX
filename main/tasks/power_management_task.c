@@ -92,15 +92,16 @@ void POWER_MANAGEMENT_task(void * pvParameters)
         //overheat mode if the voltage regulator or ASIC is too hot
         if ((power_management->vr_temp > TPS546_THROTTLE_TEMP || power_management->chip_temp_avg > THROTTLE_TEMP) && (power_management->frequency_value > 50 || power_management->voltage > 1000)) {
             ESP_LOGE(TAG, "OVERHEAT! VR: %fC ASIC %fC", power_management->vr_temp, power_management->chip_temp_avg );
-            power_management->fan_perc = 100;
-            Thermal_set_fan_percent(GLOBAL_STATE->DEVICE_CONFIG, 1);
+            float fs = (float) nvs_config_get_u16(NVS_CONFIG_FAN_SPEED, 40);
+            power_management->fan_perc = fs;
+            Thermal_set_fan_percent(GLOBAL_STATE->DEVICE_CONFIG, fs / 100.0);
 
             // Turn off core voltage
             VCORE_set_voltage(0.0f, GLOBAL_STATE);
 
             nvs_config_set_u16(NVS_CONFIG_ASIC_VOLTAGE, 1000);
             nvs_config_set_u16(NVS_CONFIG_ASIC_FREQ, 50);
-            nvs_config_set_u16(NVS_CONFIG_FAN_SPEED, 100);
+            nvs_config_set_u16(NVS_CONFIG_FAN_SPEED, fs);
             nvs_config_set_u16(NVS_CONFIG_AUTO_FAN_SPEED, 0);
             nvs_config_set_u16(NVS_CONFIG_OVERHEAT_MODE, 1);
             exit(EXIT_FAILURE);
@@ -155,7 +156,7 @@ void POWER_MANAGEMENT_task(void * pvParameters)
                 }
             }
         } else { // Manual fan speed
-            float fs = (float) nvs_config_get_u16(NVS_CONFIG_FAN_SPEED, 100);
+            float fs = (float) nvs_config_get_u16(NVS_CONFIG_FAN_SPEED, 40);
             power_management->fan_perc = fs;
             Thermal_set_fan_percent(GLOBAL_STATE->DEVICE_CONFIG, (float) fs / 100.0);
         }

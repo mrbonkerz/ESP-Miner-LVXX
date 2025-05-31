@@ -48,6 +48,7 @@ export interface ISystemInfo {
     version: string,
     idfVersion: string,
     boardVersion: string,
+    family: string,
     autofanspeed: number,
     fanspeed: number,
     temptarget: number,
