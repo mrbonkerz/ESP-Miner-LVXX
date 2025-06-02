@@ -1,8 +1,10 @@
-
-
-#include "... .h"
 #include "sha/sha_core.h"
 #include <string.h>
+#include <stdio.h>
+#include <limits.h>
+#include "mining.h"
+#include "utils.h"
+#include "mbedtls/sha256.h"
 
 
 static const double truediffone = 26959535291011309493156476344723991336010898738574164086137773096960.0;
