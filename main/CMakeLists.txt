@@ -34,6 +34,7 @@ SRCS
     "./power/INA260.c"
     "./power/power.c"
     "./power/vcore.c"
+    "./power/asic_reset.c"
 
 INCLUDE_DIRS
     "."

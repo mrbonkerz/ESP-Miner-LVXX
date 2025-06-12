@@ -6,8 +6,6 @@
 
 #include <math.h>
 
-#define GPIO_ASIC_ENABLE CONFIG_GPIO_ASIC_ENABLE
-
 float Power_get_current(GlobalState * GLOBAL_STATE)
 {
     if (GLOBAL_STATE->DEVICE_CONFIG.TPS546 || GLOBAL_STATE->DEVICE_CONFIG.TPS546_1) {
