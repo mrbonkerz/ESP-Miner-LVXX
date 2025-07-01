@@ -37,6 +37,8 @@ typedef enum
     SUPRA,
     GAMMA,
     GAMMA_TURBO,
+    LV07,
+    LV08
 } Family;
 
 typedef struct {
