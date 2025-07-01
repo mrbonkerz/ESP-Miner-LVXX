@@ -89,7 +89,6 @@ components:
       required:
         - ASICModel
         - apEnabled
-        - asicCount
         - autofanspeed
         - bestDiff
         - bestSessionDiff
@@ -97,13 +96,15 @@ components:
         - coreVoltage
         - coreVoltageActual
         - current
+        - fallbackStratumExtranonceSubscribe
         - fallbackStratumPort
+        - fallbackStratumSuggestedDifficulty
         - fallbackStratumURL
         - fallbackStratumUser
         - fanrpm
         - fanspeed
         - temptarget
-        - flipscreen
+        - rotation
         - freeHeap
         - frequency
         - hashRate
@@ -118,27 +119,30 @@ components:
         - nominalVoltage
         - overheat_mode
         - overclockEnabled
+        - poolDifficulty
         - power
+        - power_fault
         - runningPartition
         - sharesAccepted
         - sharesRejected
         - sharesRejectedReasons
         - smallCoreCount
         - ssid
-        - stratumDiff
+        - stratumExtranonceSubscribe
         - stratumPort
+        - stratumSuggestedDifficulty
         - stratumURL
         - stratumUser
         - temp
         - uptimeSeconds
         - version
+        - axeOSVersion
         - voltage
         - vrTemp
         - wifiStatus
         - wifiRSSI
         - displayTimeout
-        - statisticsLimit
-        - statisticsDuration
+        - statsFrequency
       properties:
         ASICModel:
           type: string
@@ -146,9 +150,6 @@ components:
         apEnabled:
           type: number
           description: Whether AP mode is enabled (0=no, 1=yes)
-        asicCount:
-          type: number
-          description: Number of ASICs detected
         autofanspeed:
           type: number
           description: Automatic fan speed control (0=manual, 1=auto)
@@ -170,9 +171,15 @@ components:
         current:
           type: number
           description: Current draw in milliamps
+        fallbackStratumExtranonceSubscribe:
+          type: boolean
+          description: Enable fallback pool extranonce subscription
         fallbackStratumPort:
           type: number
           description: Fallback stratum server port
+        fallbackStratumSuggestedDifficulty:
+          type: number
+          description: Fallback pool suggested difficulty
         fallbackStratumURL:
           type: string
           description: Fallback stratum server URL
@@ -188,9 +195,9 @@ components:
         temptarget:
           type: number
           description: Target Temperature for the PID Controller
-        flipscreen:
+        rotation:
           type: number
-          description: Screen flip setting (0=normal, 1=flipped)
+          description: Screen rotation setting (0, 90, 180, 270)
         freeHeap:
           type: number
           description: Available heap memory in bytes
@@ -230,6 +237,9 @@ components:
         overclockEnabled:
           type: integer
           description: Set custom voltage/frequency in AxeOS
+        poolDifficulty:
+          type: number
+          description: Current pool difficulty
         power:
           type: number
           description: Power consumption in watts
@@ -256,12 +266,15 @@ components:
         ssid:
           type: string
           description: Connected WiFi network SSID
-        stratumDiff:
-          type: number
-          description: Current stratum difficulty
+        stratumExtranonceSubscribe:
+          type: boolean
+          description: Enable pool extranonce subscription
         stratumPort:
           type: number
           description: Primary stratum server port
+        stratumSuggestedDifficulty:
+          type: number
+          description: Pool suggested difficulty
         stratumURL:
           type: string
           description: Primary stratum server URL
@@ -277,6 +290,9 @@ components:
         version:
           type: string
           description: Firmware version
+        axeOSVersion:
+          type: string
+          description: AxeOS version
         voltage:
           type: number
           description: Input voltage
@@ -292,12 +308,9 @@ components:
         displayTimeout:
           type: number
           description: Turn off display after timeout
-        statsLimit:
+        statsFrequency:
           type: number
-          description: Max limit data points for statistics
-        statsDuration:
-          type: number
-          description: Statistics duration in hours
+          description: Statistics frequency in seconds
 
     Settings:
       type: object
@@ -381,9 +394,9 @@ components:
           minimum: 1
           examples:
             - 450
-        flipscreen:
+        rotation:
           type: integer
-          description: Whether to flip the screen orientation (0=normal, 1=flipped)
+          description: Whether to rotate the screen orientation (0, 90, 180, 270 degrees)
           enum: [0, 1]
           examples:
             - 0
@@ -432,20 +445,12 @@ components:
           maximum: 71582
           examples:
             - 10
-        statsLimit:
+        statsFrequency:
           type: integer
-          description: Set max limit data points for statistics (0=live data points only)
+          description: Set statistics frequency in seconds (0=disabled)
           minimum: 0
-          maximum: 720
           examples:
-            - 0
-        statsDuration:
-          type: integer
-          description: Set statistics duration in hours
-          minimum: 1
-          maximum: 720
-          examples:
-            - 1
+            - 120
       additionalProperties: true
 
   responses:
@@ -517,6 +522,9 @@ paths:
                 type: object
                 required:
                   - ASICModel
+                  - swarmColor
+                  - asicCount
+                  - deviceModel
                   - defaultFrequency
                   - frequencyOptions
                   - defaultVoltage
@@ -532,6 +540,19 @@ paths:
                       - BM1397
                     examples:
                       - "BM1366"
+                  deviceModel:
+                    type: string
+                    description: Device model name
+                    examples:
+                      - "Ultra"
+                  swarmColor:
+                    type: string
+                    description: Swarm color
+                    examples:
+                      - "purple"
+                  asicCount:
+                    type: number
+                    description: Number of ASICs detected
                   defaultFrequency:
                     type: number
                     description: Default frequency for the ASIC model in MHz

@@ -36,7 +36,10 @@ esp_err_t GET_system_asic(httpd_req_t *req)
 
     // Add ASIC model to the JSON object
     cJSON_AddStringToObject(root, "ASICModel", GLOBAL_STATE->DEVICE_CONFIG.family.asic.name);
-    
+    cJSON_AddStringToObject(root, "deviceModel", GLOBAL_STATE->DEVICE_CONFIG.family.name);
+    cJSON_AddStringToObject(root, "swarmColor", GLOBAL_STATE->DEVICE_CONFIG.family.swarm_color);
+    cJSON_AddNumberToObject(root, "asicCount", GLOBAL_STATE->DEVICE_CONFIG.family.asic_count);
+
     cJSON_AddNumberToObject(root, "defaultFrequency", GLOBAL_STATE->DEVICE_CONFIG.family.asic.default_frequency_mhz);
 
     // Create arrays for frequency and voltage options based on ASIC model

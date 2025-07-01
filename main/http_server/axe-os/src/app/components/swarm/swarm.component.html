@@ -96,6 +96,10 @@
                     label: 'Temp'
                 },
                 {
+                    name: 'poolDifficulty',
+                    label: 'Pool Diff'
+                },
+                {
                     name: 'version',
                     label: 'Version'
                 },
@@ -117,17 +121,10 @@
             <tr>
                 <td>
                     <a
-                       [ngClass]="[
-                            axe.asicCount > 1 ? 'text-orange-500' :
-                            axe.ASICModel === 'BM1397' ? 'text-red-500' :
-                            axe.ASICModel === 'BM1366' ? 'text-purple-500' :
-                            axe.ASICModel === 'BM1368' ? 'text-blue-500' :
-                            axe.ASICModel === 'BM1370' ? 'text-green-500' :
-                            ''
-                       ]"
+                       [ngClass]="'text-'+axe.swarmColor+'-500'"
                        [href]="'http://'+axe.IP"
                        target="_blank"
-                       [pTooltip]="axe.ASICModel"
+                       [pTooltip]="axe.deviceModel || 'Other'"
                        tooltipPosition="top">{{axe.IP}}</a>
                 </td>
                 <td>{{axe.hostname}}</td>
@@ -173,6 +170,7 @@
                         {{axe.vrTemp | number: '1.0-1'}}°<small>C</small>
                     </div>
                 </td>
+                <td>{{axe.poolDifficulty || axe.stratumDiff}}</td>
                 <td>{{axe.version}}</td>
                 <td><p-button icon="pi pi-pencil" pp-button (click)="edit(axe)"></p-button></td>
                 <td><p-button icon="pi pi-sync" pp-button severity="danger" (click)="restart(axe)"></p-button></td>
@@ -182,33 +180,14 @@
     </table>
 
     <div class="flex flex-wrap gap-2 mt-3 text-sm justify-content-center">
-        <div class="flex align-items-center gap-1" [style.opacity]="hasModel('BM1397')">
-            <span class="text-red-500">●</span>
-            <span>BM1397 (Max)</span>
-        </div>
-        <div class="flex align-items-center gap-1" [style.opacity]="hasModel('BM1366')">
-            <span class="text-purple-500">●</span>
-            <span>BM1366 (Ultra)</span>
-        </div>
-        <div class="flex align-items-center gap-1" [style.opacity]="hasModel('BM1368')">
-            <span class="text-blue-500">●</span>
-            <span>BM1368 (Supra)</span>
-        </div>
-        <div class="flex align-items-center gap-1" [style.opacity]="hasModel('BM1370')">
-            <span class="text-green-500">●</span>
-            <span>BM1370 (Gamma)</span>
-        </div>
-        <div class="flex align-items-center gap-1" [style.opacity]="hasMultipleChips()">
-            <span class="text-orange-500">●</span>
-            <span>Multiple Chip Device</span>
+        <div *ngFor="let item of getFamilies" class="flex align-items-center gap-1">
+            <span [class]="'text-' + item.swarmColor + '-500'">●</span>
+            <span>{{ item.deviceModel || 'Other' }} ({{item.asicCount > 1 ? item.asicCount + 'x ' : ''}}{{item.ASICModel}})</span>
         </div>
     </div>
 
 </div>
 
-<div class="modal-backdrop" *ngIf="showEdit" (click)="showEdit = false"></div>
-<div class="modal card" *ngIf="showEdit">
-    <div class="close" (click)="showEdit = false">&#10006;</div>
-    <h1>{{selectedAxeOs.IP}}</h1>
-    <app-edit [uri]="'http://' + selectedAxeOs.IP"></app-edit>
-</div>
+<app-modal [headline]="selectedAxeOs?.IP">
+    <app-edit *ngIf="selectedAxeOs" [uri]="'http://' + selectedAxeOs.IP"></app-edit>
+</app-modal>

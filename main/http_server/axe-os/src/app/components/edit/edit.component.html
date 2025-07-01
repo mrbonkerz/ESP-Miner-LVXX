@@ -5,7 +5,7 @@
             text="Custom settings can cause damage & system instability. Only modify these settings if you understand the risks of running outside designed parameters.">
         </p-message>
 
-        <ng-container *ngIf="!settingsUnlocked && restrictedModels.includes(ASICModel)">
+        <ng-container *ngIf="!settingsUnlocked">
             <div class="field grid p-fluid">
                 <label class="col-12 mb-2 md:col-2 md:mb-0" htmlFor="frequency">Frequency</label>
                 <div class="col-12 md:col-10">
@@ -80,7 +80,22 @@
         <div class="field grid p-fluid">
             <label class="col-12 mb-2 md:col-2 md:mb-0" htmlFor="display">Display</label>
             <div class="col-12 md:col-10">
-                <p-dropdown [options]="getDisplays()" formControlName="display"></p-dropdown>
+                <p-dropdown [options]="displays" formControlName="display"></p-dropdown>
+            </div>
+        </div>
+
+        <div class="field grid p-fluid">
+            <label class="col-12 mb-2 md:col-2 md:mb-0" htmlFor="rotation">Rotation</label>
+            <div class="col-12 md:col-10">
+                <p-dropdown [options]="rotations" formControlName="rotation"></p-dropdown>
+            </div>
+        </div>
+
+        <div class="col-12 md:col-4">
+            <div class="field-checkbox">
+                <p-checkbox name="invertscreen" formControlName="invertscreen" inputId="invertscreen"
+                    [binary]="true"></p-checkbox>
+                <label for="invertscreen">Invert Screen <i class="pi pi-info-circle" style="font-size: 0.8rem; margin-left: 0.2rem;" pTooltip="Inverts the colors"></i></label>
             </div>
         </div>
 
@@ -105,39 +120,20 @@
             </div>
         </div>
 
-        <div class="col-12 md:col-4">
-            <div class="field-checkbox">
-                <p-checkbox name="flipscreen" formControlName="flipscreen" inputId="flipscreen"
-                    [binary]="true"></p-checkbox>
-                <label for="flipscreen">Flip Screen <i class="pi pi-info-circle" style="font-size: 0.8rem; margin-left: 0.2rem;" pTooltip="Rotates the LCD screen by 180 degrees"></i></label>
-            </div>
-        </div>
-
-        <div class="col-12 md:col-4">
-            <div class="field-checkbox">
-                <p-checkbox name="invertscreen" formControlName="invertscreen" inputId="invertscreen"
-                    [binary]="true"></p-checkbox>
-                <label for="invertscreen">Invert Screen <i class="pi pi-info-circle" style="font-size: 0.8rem; margin-left: 0.2rem;" pTooltip="Inverts the colors"></i></label>
-            </div>
-        </div>
-
         <h3 class="mt-5">Statistics</h3>
 
         <div class="flex flex-column mb-5 gap-3">
             <div>
                 <label class="block mb-2">
-                    Statistics Limit: {{form.controls['statsLimit'].value}} previous data points
-                    <b *ngIf="form.controls['statsLimit'].value == 0"> (live data points only)</b>
+                    <ng-container *ngIf="this.form.controls['statsFrequency'].value == 0">
+                        Data logging disabled
+                    </ng-container>
+                    <ng-container *ngIf="this.form.controls['statsFrequency'].value > 0">
+                        Log data every {{form.controls['statsFrequency'].value | dateAgo: {strict: true} }} for {{(form.controls['statsFrequency'].value * 720) | dateAgo}}
+                    </ng-container>
                 </label>
-                <p-slider [min]="0" [max]="720" [step]="60" formControlName="statsLimit"></p-slider>
-            </div>
-
-            <div>
-                <label class="block mb-2">
-                    Statistics Duration:
-                    {{form.controls['statsDuration'].value}} hour{{form.controls['statsDuration'].value > 1 ? 's': ''}}
-                </label>
-                <p-slider [min]="1" [max]="720" formControlName="statsDuration"></p-slider>
+                <p-slider [min]="0" [max]="statsFrequencyMaxSteps" [step]="1" [formControl]="statsFrequencyControl"></p-slider>
+                <input type="hidden" formControlName="statsFrequency" />
             </div>
         </div>
 

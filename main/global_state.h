@@ -57,6 +57,11 @@ typedef struct
     char * fallback_pool_user;
     char * pool_pass;
     char * fallback_pool_pass;
+    uint16_t pool_difficulty;
+    uint16_t fallback_pool_difficulty;
+    bool pool_extranonce_subscribe;
+    bool fallback_pool_extranonce_subscribe;
+    double response_time;
     bool is_using_fallback;
     uint16_t overheat_mode;
     uint16_t power_fault;
@@ -70,10 +75,11 @@ typedef struct
 
 typedef struct
 {
-    bool active;
+    bool is_active;
+    bool is_finished;
     char *message;
-    bool result;
-    bool finished;
+    char *result;
+    char *finished;
 } SelfTestModule;
 
 typedef struct
@@ -96,7 +102,7 @@ typedef struct
     uint8_t * valid_jobs;
     pthread_mutex_t valid_jobs_lock;
 
-    uint32_t stratum_difficulty;
+    uint32_t pool_difficulty;
     bool new_set_mining_difficulty_msg;
     uint32_t version_mask;
     bool new_stratum_version_rolling_msg;
