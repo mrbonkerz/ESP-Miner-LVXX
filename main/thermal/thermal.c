@@ -41,7 +41,7 @@ esp_err_t Thermal_set_fan_percent(DeviceConfig * DEVICE_CONFIG, float percent)
     if (DEVICE_CONFIG->EMC2103) {
         EMC2103_set_fan_speed(percent);
     }
-    if (device_config.EMC2302) {
+    if (DEVICE_CONFIG->EMC2302) {
         EMC2302_set_fan_speed(0, percent);
         EMC2302_set_fan_speed(1, percent);
     }
@@ -56,7 +56,7 @@ uint16_t Thermal_get_fan_speed(DeviceConfig * DEVICE_CONFIG)
     if (DEVICE_CONFIG->EMC2103) {
         return EMC2103_get_fan_speed();
     }
-    if (device_config.EMC2302) {
+    if (DEVICE_CONFIG->EMC2302) {
         return EMC2302_get_fan_speed(0);
     }
     return 0;
