@@ -21,7 +21,7 @@ esp_err_t Thermal_init(DeviceConfig * DEVICE_CONFIG)
         ESP_LOGI(TAG, "Initializing EMC2103 (Temperature offset: %dC)", DEVICE_CONFIG->emc_temp_offset);
         return EMC2103_init();
     }
-    if (device_config.EMC2302) {
+    if (DEVICE_CONFIG->EMC2302) {
         esp_err_t res = EMC2302_init();
         if (res == ESP_OK) {
             return TMP1075_init();
