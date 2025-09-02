@@ -16,6 +16,7 @@
 
 #define MAX_RETRY_ATTEMPTS 3
 #define MAX_CRITICAL_RETRY_ATTEMPTS 5
+#define MAX_EXTRANONCE_2_LEN 32
 
 #define BUFFER_SIZE 1024
 
@@ -218,6 +219,7 @@ void stratum_task(void * pvParameters)
             GLOBAL_STATE->SYSTEM_MODULE.rejected_reason_stats_count = 0;
             GLOBAL_STATE->SYSTEM_MODULE.shares_accepted = 0;
             GLOBAL_STATE->SYSTEM_MODULE.shares_rejected = 0;
+            GLOBAL_STATE->SYSTEM_MODULE.work_received = 0;
 
             ESP_LOGI(TAG, "Switching target due to too many failures (retries: %d)...", retry_attempts);
             retry_attempts = 0;
@@ -318,6 +320,7 @@ void stratum_task(void * pvParameters)
             free(line);
 
             if (stratum_api_v1_message.method == MINING_NOTIFY) {
+                GLOBAL_STATE->SYSTEM_MODULE.work_received++;
                 SYSTEM_notify_new_ntime(GLOBAL_STATE, stratum_api_v1_message.mining_notification->ntime);
                 if (stratum_api_v1_message.should_abandon_work &&
                     (GLOBAL_STATE->stratum_queue.count > 0 || GLOBAL_STATE->ASIC_jobs_queue.count > 0)) {
@@ -339,6 +342,12 @@ void stratum_task(void * pvParameters)
                 GLOBAL_STATE->new_stratum_version_rolling_msg = true;
             } else if (stratum_api_v1_message.method == MINING_SET_EXTRANONCE ||
                     stratum_api_v1_message.method == STRATUM_RESULT_SUBSCRIBE) {
+                // Validate extranonce_2_len to prevent buffer overflow
+                if (stratum_api_v1_message.extranonce_2_len > MAX_EXTRANONCE_2_LEN) {
+                    ESP_LOGW(TAG, "Extranonce_2_len %d exceeds maximum %d, clamping to maximum", 
+                             stratum_api_v1_message.extranonce_2_len, MAX_EXTRANONCE_2_LEN);
+                    stratum_api_v1_message.extranonce_2_len = MAX_EXTRANONCE_2_LEN;
+                }
                 ESP_LOGI(TAG, "Set extranonce: %s, extranonce_2_len: %d", stratum_api_v1_message.extranonce_str, stratum_api_v1_message.extranonce_2_len);
                 char * old_extranonce_str = GLOBAL_STATE->extranonce_str;
                 GLOBAL_STATE->extranonce_str = stratum_api_v1_message.extranonce_str;

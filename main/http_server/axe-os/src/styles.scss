@@ -14,7 +14,7 @@
 @import "app/layout/styles/theme/themes/vela/bitaxe/theme.scss";
 
 @import "app/layout/styles/modules/primeicons.css";
-@import "../node_modules/primeng/resources/primeng.min.css";
+@import "app/layout/styles/modules/primeng.min.css";
 
 @import "../node_modules/primeflex/primeflex.min.css";
 
@@ -28,6 +28,21 @@ p-chart>div {
 .card {
     &.chart {
         padding: 10px;
+    }
+}
+
+.hover-next-input:hover + * {
+    .p-dropdown {
+        border-color: var(--checkbox-hover-bg);
+    }
+    .p-slider {
+        .p-slider-handle {
+            border-color: var(--checkbox-hover-bg);
+            background-color: var(--checkbox-hover-bg);
+        }
+        .p-slider-range {
+            background-color: var(--checkbox-hover-bg);
+        }
     }
 }
 
@@ -56,7 +71,7 @@ p-chart>div {
     }
 }
 
-.p-button {
+.p-button:not(.p-button-secondary) {
     background: var(--button-bg);
     border: 1px solid var(--button-bg);
 
@@ -157,4 +172,33 @@ button.color-dot {
 
 .p-button-icon {
     font-size: 1.2rem;
+}
+
+.p-dialog {
+    @extend .card;
+    margin: 1rem;
+
+    &-header,
+    &-content {
+        padding: 0;
+        margin: 0;
+        background: none;
+    }
+
+    &-header {
+        margin: 0 0 2rem;
+    }
+
+    &-header-icon {
+        @extend .p-button;
+        width: 2.2rem;
+        height: 2.2rem;
+        color: #fff;
+        border-radius: 0;
+    }
+
+    &-title {
+        @extend h2;
+        margin: 0;
+    }
 }

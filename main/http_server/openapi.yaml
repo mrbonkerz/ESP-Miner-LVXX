@@ -116,6 +116,7 @@ components:
         - isUsingFallbackStratum
         - macAddr
         - maxPower
+        - minimumFanSpeed
         - nominalVoltage
         - overheat_mode
         - overclockEnabled
@@ -134,6 +135,7 @@ components:
         - stratumURL
         - stratumUser
         - temp
+        - temp2
         - uptimeSeconds
         - version
         - axeOSVersion
@@ -206,7 +208,7 @@ components:
           description: ASIC frequency in MHz
         hashRate:
           type: number
-          description: Current hash rate
+          description: Current hashrate
         hostname:
           type: string
           description: Device hostname
@@ -228,6 +230,9 @@ components:
         maxPower:
           type: integer
           description: Maxmium power draw of the board in watts
+        minimumFanSpeed:
+          type: integer
+          description: Minimum fan speed percentage when using auto fan control
         nominalVoltage:
           type: integer
           description: Nominal board voltage
@@ -284,6 +289,9 @@ components:
         temp:
           type: number
           description: Average chip temperature
+        temp2:
+          type: number
+          description: Average chip temperature from second sensor
         uptimeSeconds:
           type: number
           description: System uptime in seconds

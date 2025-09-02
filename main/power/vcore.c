@@ -74,8 +74,8 @@ static TPS546_CONFIG TPS546_CONFIG_LV08 = {
     .TPS546_INIT_VOUT_MAX = 4,
     .TPS546_INIT_VOUT_COMMAND = 3.6,\
     /* iout current */
-    .TPS546_INIT_IOUT_OC_WARN_LIMIT = 40.00, /* A */
-    .TPS546_INIT_IOUT_OC_FAULT_LIMIT = 45.00 /* A */
+    .TPS546_INIT_IOUT_OC_WARN_LIMIT = 45.00, /* A */
+    .TPS546_INIT_IOUT_OC_FAULT_LIMIT = 50.00 /* A */
 };
 
 esp_err_t VCORE_init(GlobalState * GLOBAL_STATE) {
@@ -128,7 +128,7 @@ esp_err_t VCORE_init(GlobalState * GLOBAL_STATE) {
     return ESP_OK;
 }
 
-esp_err_t VCORE_set_voltage(float core_voltage, GlobalState * GLOBAL_STATE)
+esp_err_t VCORE_set_voltage(GlobalState * GLOBAL_STATE, float core_voltage)
 {
     ESP_LOGI(TAG, "Set ASIC voltage = %.3fV", core_voltage);
  

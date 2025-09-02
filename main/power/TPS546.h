@@ -183,7 +183,7 @@ esp_err_t TPS546_set_vout(float volts, int i2c_addr);
 void TPS546_show_voltage_settings(int i2c_addr);
 void TPS546_print_status(int i2c_addr);
 
-esp_err_t TPS546_check_status(GlobalState * global_state, int i2c_addr);
+esp_err_t TPS546_check_status(GlobalState * GLOBAL_STATE, int i2c_addr);
 esp_err_t TPS546_clear_faults(int i2c_addr);
 
 const char* TPS546_get_error_message(void); //Get the current TPS error message

@@ -102,9 +102,9 @@ esp_err_t SYSTEM_init_peripherals(GlobalState * GLOBAL_STATE) {
 
     // Initialize the core voltage regulator
     ESP_RETURN_ON_ERROR(VCORE_init(GLOBAL_STATE), TAG, "VCORE init failed!");
-    ESP_RETURN_ON_ERROR(VCORE_set_voltage(nvs_config_get_u16(NVS_CONFIG_ASIC_VOLTAGE, CONFIG_ASIC_VOLTAGE) / 1000.0, GLOBAL_STATE), TAG, "VCORE set voltage failed!");
+    ESP_RETURN_ON_ERROR(VCORE_set_voltage(GLOBAL_STATE, nvs_config_get_u16(NVS_CONFIG_ASIC_VOLTAGE, CONFIG_ASIC_VOLTAGE) / 1000.0), TAG, "VCORE set voltage failed!");
 
-    ESP_RETURN_ON_ERROR(Thermal_init(GLOBAL_STATE->DEVICE_CONFIG), TAG, "Thermal init failed!");
+    ESP_RETURN_ON_ERROR(Thermal_init(&GLOBAL_STATE->DEVICE_CONFIG), TAG, "Thermal init failed!");
 
     vTaskDelay(500 / portTICK_PERIOD_MS);
 
@@ -312,15 +312,15 @@ static void _suffix_string(uint64_t val, char * buf, size_t bufsiz, int sigdigit
 
     if (!sigdigits) {
         if (decimal)
-            snprintf(buf, bufsiz, "%.2f%s", dval, suffix);
+            snprintf(buf, bufsiz, "%.2f %s", dval, suffix);
         else
-            snprintf(buf, bufsiz, "%d%s", (unsigned int) dval, suffix);
+            snprintf(buf, bufsiz, "%d %s", (unsigned int) dval, suffix);
     } else {
         /* Always show sigdigits + 1, padded on right with zeroes
          * followed by suffix */
         int ndigits = sigdigits - 1 - (dval > 0.0 ? floor(log10(dval)) : 0);
 
-        snprintf(buf, bufsiz, "%*.*f%s", sigdigits + 1, ndigits, dval, suffix);
+        snprintf(buf, bufsiz, "%*.*f %s", sigdigits + 1, ndigits, dval, suffix);
     }
 }
 

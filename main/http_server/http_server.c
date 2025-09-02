@@ -2,6 +2,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <sys/param.h>
+#include <sys/stat.h>
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
@@ -40,6 +41,7 @@
 #include "axe-os/api/system/asic_settings.h"
 #include "http_server.h"
 #include "system.h"
+#include "websocket.h"
 
 #define JSON_ALL_STATS_ELEMENT_SIZE 120
 #define JSON_DASHBOARD_STATS_ELEMENT_SIZE 60
@@ -48,6 +50,9 @@ static const char * TAG = "http_server";
 static const char * CORS_TAG = "CORS";
 
 static char axeOSVersion[32];
+
+static GlobalState * GLOBAL_STATE;
+static httpd_handle_t server = NULL;
 
 /* Handler for WiFi scan endpoint */
 static esp_err_t GET_wifi_scan(httpd_req_t *req)
@@ -87,11 +92,6 @@ static esp_err_t GET_wifi_scan(httpd_req_t *req)
     return ESP_OK;
 }
 
-static GlobalState * GLOBAL_STATE;
-static httpd_handle_t server = NULL;
-QueueHandle_t log_queue = NULL;
-
-static int fd = -1;
 
 #define REST_CHECK(a, str, goto_tag, ...)                                                                                          \
     do {                                                                                                                           \
@@ -293,7 +293,6 @@ static esp_err_t set_content_type_from_file(httpd_req_t * req, const char * file
 
 esp_err_t set_cors_headers(httpd_req_t * req)
 {
-
     esp_err_t err;
 
     err = httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
@@ -355,10 +354,16 @@ static esp_err_t rest_api_common_handler(httpd_req_t * req)
     return ESP_OK;
 }
 
+static bool file_exists(const char *path) {
+    struct stat buffer;
+    return (stat(path, &buffer) == 0);
+}
+
 /* Send HTTP response with the contents of the requested file */
 static esp_err_t rest_common_get_handler(httpd_req_t * req)
 {
     char filepath[FILE_PATH_MAX];
+    char gz_file[FILE_PATH_MAX];
     uint8_t filePathLength = sizeof(filepath);
 
     rest_server_context_t * rest_context = (rest_server_context_t *) req->user_ctx;
@@ -369,8 +374,14 @@ static esp_err_t rest_common_get_handler(httpd_req_t * req)
         strlcat(filepath, req->uri, filePathLength);
     }
     set_content_type_from_file(req, filepath);
-    strcat(filepath, ".gz");
-    int fd = open(filepath, O_RDONLY, 0);
+
+    strlcpy(gz_file, filepath, filePathLength);
+    strlcat(gz_file, ".gz", filePathLength);
+
+    bool serve_gz = file_exists(gz_file);
+    const char *file_to_open = serve_gz ? gz_file : filepath;
+
+    int fd = open(file_to_open, O_RDONLY, 0);
     if (fd == -1) {
         // Set status
         httpd_resp_set_status(req, "302 Temporary Redirect");
@@ -386,7 +397,9 @@ static esp_err_t rest_common_get_handler(httpd_req_t * req)
         httpd_resp_set_hdr(req, "Cache-Control", "max-age=2592000");
     }
 
-    httpd_resp_set_hdr(req, "Content-Encoding", "gzip");
+    if (serve_gz) {
+        httpd_resp_set_hdr(req, "Content-Encoding", "gzip");
+    }
 
     char * chunk = rest_context->scratch;
     ssize_t read_bytes;
@@ -394,7 +407,7 @@ static esp_err_t rest_common_get_handler(httpd_req_t * req)
         /* Read file in chunks into the scratch buffer */
         read_bytes = read(fd, chunk, SCRATCH_BUFSIZE);
         if (read_bytes == -1) {
-            ESP_LOGE(TAG, "Failed to read file : %s", filepath);
+            ESP_LOGE(TAG, "Failed to read file : %s", file_to_open);
         } else if (read_bytes > 0) {
             /* Send the buffer contents as HTTP response chunk */
             if (httpd_resp_send_chunk(req, chunk, read_bytes) != ESP_OK) {
@@ -436,7 +449,6 @@ static esp_err_t handle_options_request(httpd_req_t * req)
 
 static esp_err_t PATCH_update_settings(httpd_req_t * req)
 {
-
     if (is_network_allowed(req) != ESP_OK) {
         return httpd_resp_send_err(req, HTTPD_401_UNAUTHORIZED, "Unauthorized");
     }
@@ -522,8 +534,11 @@ static esp_err_t PATCH_update_settings(httpd_req_t * req)
     if ((item = cJSON_GetObjectItem(root, "coreVoltage")) != NULL && item->valueint > 0) {
         nvs_config_set_u16(NVS_CONFIG_ASIC_VOLTAGE, item->valueint);
     }
-    if ((item = cJSON_GetObjectItem(root, "frequency")) != NULL && item->valueint > 0) {
-        nvs_config_set_u16(NVS_CONFIG_ASIC_FREQ, item->valueint);
+    if ((item = cJSON_GetObjectItem(root, "frequency")) != NULL && item->valuedouble > 0) {
+        float frequency = item->valuedouble;
+        nvs_config_set_float(NVS_CONFIG_ASIC_FREQUENCY_FLOAT, frequency);
+        // also store as u16 for backwards compatibility
+        nvs_config_set_u16(NVS_CONFIG_ASIC_FREQUENCY, (int) frequency);
     }
     if ((item = cJSON_GetObjectItem(root, "overheat_mode")) != NULL) {
         nvs_config_set_u16(NVS_CONFIG_OVERHEAT_MODE, 0);
@@ -545,6 +560,9 @@ static esp_err_t PATCH_update_settings(httpd_req_t * req)
     }
     if ((item = cJSON_GetObjectItem(root, "fanspeed")) != NULL) {
         nvs_config_set_u16(NVS_CONFIG_FAN_SPEED, item->valueint);
+    }
+    if ((item = cJSON_GetObjectItem(root, "minFanSpeed")) != NULL) {
+        nvs_config_set_u16(NVS_CONFIG_MIN_FAN_SPEED, item->valueint);
     }
     if ((item = cJSON_GetObjectItem(root, "temptarget")) != NULL) {
         nvs_config_set_u16(NVS_CONFIG_TEMP_TARGET, item->valueint);
@@ -589,7 +607,6 @@ static esp_err_t POST_restart(httpd_req_t * req)
     return ESP_OK;
 }
 
-
 /* Simple handler for getting system handler */
 static esp_err_t GET_system_info(httpd_req_t * req)
 {
@@ -612,7 +629,7 @@ static esp_err_t GET_system_info(httpd_req_t * req)
     char * stratumUser = nvs_config_get_string(NVS_CONFIG_STRATUM_USER, CONFIG_STRATUM_USER);
     char * fallbackStratumUser = nvs_config_get_string(NVS_CONFIG_FALLBACK_STRATUM_USER, CONFIG_FALLBACK_STRATUM_USER);
     char * display = nvs_config_get_string(NVS_CONFIG_DISPLAY, "SSD1306 (128x32)");
-    uint16_t frequency = nvs_config_get_u16(NVS_CONFIG_ASIC_FREQ, CONFIG_ASIC_FREQUENCY);
+    float frequency = nvs_config_get_float(NVS_CONFIG_ASIC_FREQUENCY_FLOAT, CONFIG_ASIC_FREQUENCY);
     float expected_hashrate = frequency * GLOBAL_STATE->DEVICE_CONFIG.family.asic.small_core_count * GLOBAL_STATE->DEVICE_CONFIG.family.asic_count / 1000.0;
 
     uint8_t mac[6];
@@ -628,6 +645,7 @@ static esp_err_t GET_system_info(httpd_req_t * req)
     cJSON_AddNumberToObject(root, "voltage", GLOBAL_STATE->POWER_MANAGEMENT_MODULE.voltage);
     cJSON_AddNumberToObject(root, "current", Power_get_current(GLOBAL_STATE));
     cJSON_AddNumberToObject(root, "temp", GLOBAL_STATE->POWER_MANAGEMENT_MODULE.chip_temp_avg);
+    cJSON_AddNumberToObject(root, "temp2", GLOBAL_STATE->POWER_MANAGEMENT_MODULE.chip_temp2_avg);
     cJSON_AddNumberToObject(root, "vrTemp", GLOBAL_STATE->POWER_MANAGEMENT_MODULE.vr_temp);
     cJSON_AddNumberToObject(root, "maxPower", GLOBAL_STATE->DEVICE_CONFIG.family.max_power);
     cJSON_AddNumberToObject(root, "nominalVoltage", GLOBAL_STATE->DEVICE_CONFIG.family.nominal_voltage);
@@ -693,10 +711,11 @@ static esp_err_t GET_system_info(httpd_req_t * req)
     cJSON_AddNumberToObject(root, "rotation", nvs_config_get_u16(NVS_CONFIG_ROTATION, 0));
     cJSON_AddNumberToObject(root, "invertscreen", nvs_config_get_u16(NVS_CONFIG_INVERT_SCREEN, 0));
     cJSON_AddNumberToObject(root, "displayTimeout", nvs_config_get_i32(NVS_CONFIG_DISPLAY_TIMEOUT, -1));
-    
+
     cJSON_AddNumberToObject(root, "autofanspeed", nvs_config_get_u16(NVS_CONFIG_AUTO_FAN_SPEED, 1));
 
     cJSON_AddNumberToObject(root, "fanspeed", GLOBAL_STATE->POWER_MANAGEMENT_MODULE.fan_perc);
+    cJSON_AddNumberToObject(root, "minFanSpeed", nvs_config_get_u16(NVS_CONFIG_MIN_FAN_SPEED, 25));
     cJSON_AddNumberToObject(root, "temptarget", nvs_config_get_u16(NVS_CONFIG_TEMP_TARGET, 60));
     cJSON_AddNumberToObject(root, "fanrpm", GLOBAL_STATE->POWER_MANAGEMENT_MODULE.fan_rpm);
 
@@ -1003,86 +1022,6 @@ esp_err_t POST_OTA_update(httpd_req_t * req)
     return ESP_OK;
 }
 
-int log_to_queue(const char * format, va_list args)
-{
-    va_list args_copy;
-    va_copy(args_copy, args);
-
-    // Calculate the required buffer size
-    int needed_size = vsnprintf(NULL, 0, format, args_copy) + 1;
-    va_end(args_copy);
-
-    // Allocate the buffer dynamically
-    char * log_buffer = (char *) calloc(needed_size + 2, sizeof(char));  // +2 for potential \n and \0
-    if (log_buffer == NULL) {
-        return 0;
-    }
-
-    // Format the string into the allocated buffer
-    va_copy(args_copy, args);
-    vsnprintf(log_buffer, needed_size, format, args_copy);
-    va_end(args_copy);
-
-    // Ensure the log message ends with a newline
-    size_t len = strlen(log_buffer);
-    if (len > 0 && log_buffer[len - 1] != '\n') {
-        log_buffer[len] = '\n';
-        log_buffer[len + 1] = '\0';
-        len++;
-    }
-
-    // Print to standard output
-    printf("%s", log_buffer);
-
-    if (xQueueSendToBack(log_queue, (void*)&log_buffer, (TickType_t) 0) != pdPASS) {
-        if (log_buffer != NULL) {
-            free((void*)log_buffer);
-        }
-    }
-
-    return 0;
-}
-
-void send_log_to_websocket(char *message)
-{
-    // Prepare the WebSocket frame
-    httpd_ws_frame_t ws_pkt;
-    memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
-    ws_pkt.payload = (uint8_t *)message;
-    ws_pkt.len = strlen(message);
-    ws_pkt.type = HTTPD_WS_TYPE_TEXT;
-
-    // Ensure server and fd are valid
-    if (server != NULL && fd >= 0) {
-        // Send the WebSocket frame asynchronously
-        if (httpd_ws_send_frame_async(server, fd, &ws_pkt) != ESP_OK) {
-            esp_log_set_vprintf(vprintf);
-        }
-    }
-
-    // Free the allocated buffer
-    free((void*)message);
-}
-
-/*
- * This handler echos back the received ws data
- * and triggers an async send if certain message received
- */
-esp_err_t echo_handler(httpd_req_t * req)
-{
-    if (is_network_allowed(req) != ESP_OK) {
-        return httpd_resp_send_err(req, HTTPD_401_UNAUTHORIZED, "Unauthorized");
-    }
-
-    if (req->method == HTTP_GET) {
-        ESP_LOGI(TAG, "Handshake done, the new connection was opened");
-        fd = httpd_req_to_sockfd(req);
-        esp_log_set_vprintf(log_to_queue);
-        return ESP_OK;
-    }
-    return ESP_OK;
-}
-
 // HTTP Error (404) Handler - Redirects all requests to the root page
 esp_err_t http_404_error_handler(httpd_req_t * req, httpd_err_code_t err)
 {
@@ -1095,29 +1034,6 @@ esp_err_t http_404_error_handler(httpd_req_t * req, httpd_err_code_t err)
 
     ESP_LOGI(TAG, "Redirecting to root");
     return ESP_OK;
-}
-
-void websocket_log_handler()
-{
-    while (true)
-    {
-        char *message;
-        if (xQueueReceive(log_queue, &message, (TickType_t) portMAX_DELAY) != pdPASS) {
-            if (message != NULL) {
-                free((void*)message);
-            }
-            vTaskDelay(10 / portTICK_PERIOD_MS);
-            continue;
-        }
-
-        if (fd == -1) {
-            free((void*)message);
-            vTaskDelay(100 / portTICK_PERIOD_MS);
-            continue;
-        }
-
-        send_log_to_websocket(message);
-    }
 }
 
 esp_err_t start_rest_server(void * pvParameters)
@@ -1140,13 +1056,13 @@ esp_err_t start_rest_server(void * pvParameters)
     REST_CHECK(rest_context, "No memory for rest context", err);
     strlcpy(rest_context->base_path, base_path, sizeof(rest_context->base_path));
 
-    log_queue = xQueueCreate(MESSAGE_QUEUE_SIZE, sizeof(char*));
-
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     config.uri_match_fn = httpd_uri_match_wildcard;
     config.stack_size = 8192;
-    config.max_open_sockets = 10;
+    config.max_open_sockets = 20;
     config.max_uri_handlers = 20;
+    config.close_fn = websocket_close_fn;
+    config.lru_purge_enable = true;
 
     ESP_LOGI(TAG, "Starting HTTP Server");
     REST_CHECK(httpd_start(&server, &config) == ESP_OK, "Start server failed", err_start);
@@ -1257,7 +1173,7 @@ esp_err_t start_rest_server(void * pvParameters)
     httpd_uri_t ws = {
         .uri = "/api/ws", 
         .method = HTTP_GET, 
-        .handler = echo_handler, 
+        .handler = websocket_handler, 
         .user_ctx = NULL, 
         .is_websocket = true
     };
@@ -1293,7 +1209,7 @@ esp_err_t start_rest_server(void * pvParameters)
     httpd_register_err_handler(server, HTTPD_404_NOT_FOUND, http_404_error_handler);
 
     // Start websocket log handler thread
-    xTaskCreate(&websocket_log_handler, "websocket_log_handler", 4096, NULL, 2, NULL);
+    xTaskCreate(websocket_task, "websocket_task", 4096, server, 2, NULL);
 
     // Start the DNS server that will redirect all queries to the softAP IP
     dns_server_config_t dns_config = DNS_SERVER_CONFIG_SINGLE("*" /* all A queries */, "WIFI_AP_DEF" /* softAP netif ID */);
