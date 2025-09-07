@@ -98,7 +98,7 @@ esp_err_t VCORE_init(GlobalState * GLOBAL_STATE) {
     if (GLOBAL_STATE->DEVICE_CONFIG.TPS546_1 || GLOBAL_STATE->DEVICE_CONFIG.TPS546_3) {
         switch (GLOBAL_STATE->DEVICE_CONFIG.family.asic_count) {
             case 1:
-                ESP_RETURN_ON_ERROR(TPS546_init(TPS546_CONFIG_LV06, 0), TAG, "TPS546 init failed!");
+                ESP_RETURN_ON_ERROR(TPS546_init(TPS546_CONFIG_LV07, 0), TAG, "TPS546 init failed!");
                 break;
             case 2:
                 ESP_RETURN_ON_ERROR(TPS546_init(TPS546_CONFIG_LV07, 0), TAG, "TPS546 init failed!");
