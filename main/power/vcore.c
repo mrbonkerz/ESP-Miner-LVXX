@@ -62,6 +62,22 @@ static TPS546_CONFIG TPS546_CONFIG_HEX = {
     .TPS546_INIT_IOUT_OC_FAULT_LIMIT = 30.00 /* A */
 };
 
+static TPS546_CONFIG TPS546_CONFIG_LV07 = {
+    /* vin voltage */
+    .TPS546_INIT_VIN_ON = 11.5,
+    .TPS546_INIT_VIN_OFF = 11.0,
+    .TPS546_INIT_VIN_UV_WARN_LIMIT = 11.0,
+    .TPS546_INIT_VIN_OV_FAULT_LIMIT = 14.0,
+    /* vout voltage */
+    .TPS546_INIT_SCALE_LOOP = 0.25,
+    .TPS546_INIT_VOUT_MIN = 1,
+    .TPS546_INIT_VOUT_MAX = 3,
+    .TPS546_INIT_VOUT_COMMAND = 1.2,
+    /* iout current */
+    .TPS546_INIT_IOUT_OC_WARN_LIMIT = 35.00, /* A */
+    .TPS546_INIT_IOUT_OC_FAULT_LIMIT = 40.00 /* A */
+};
+
 static TPS546_CONFIG TPS546_CONFIG_LV08 = {
     /* vin voltage */
     .TPS546_INIT_VIN_ON = 11.5,
@@ -94,9 +110,11 @@ esp_err_t VCORE_init(GlobalState * GLOBAL_STATE)
                 ESP_RETURN_ON_ERROR(TPS546_init(TPS546_CONFIG_GAMMATURBO, 0), TAG, "TPS546 init failed!");
                 break;
             case HEX:
+                ESP_RETURN_ON_ERROR(TPS546_init(TPS546_CONFIG_HEX, 0), TAG, "TPS546 init failed!");
+                break;
             case LV06:
             case LV07:
-                ESP_RETURN_ON_ERROR(TPS546_init(TPS546_CONFIG_HEX, 0), TAG, "TPS546 init failed!");
+                ESP_RETURN_ON_ERROR(TPS546_init(TPS546_CONFIG_LV07, 0), TAG, "TPS546 init failed!");
                 break;
             case LV08:
                 ESP_RETURN_ON_ERROR(TPS546_init(TPS546_CONFIG_LV08, 0), TAG, "TPS546 init failed!");
