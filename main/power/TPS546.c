@@ -683,7 +683,7 @@ int TPS546_get_temperature(int i2c_addr)
     smb_read_word(PMBUS_READ_TEMPERATURE_1, &value, i2c_addr);
     temp = slinear11_2_int(value);
     #ifdef DEBUG_TPS546_MEAS
-    ESP_LOGI(TAG, "TPS546_%i Got Temp: %2.3f C", i2c_addr, temp);
+    ESP_LOGI(TAG, "TPS546_%i - Got Temp: %i C", i2c_addr, temp);
     #endif
     return temp;
 }
@@ -700,7 +700,7 @@ float TPS546_get_vin(int i2c_addr)
     } else {
         vin = slinear11_2_float(u16_value);
         #ifdef DEBUG_TPS546_MEAS
-        ESP_LOGI(TAG, "TPS546_%i Got Vin: %2.3f V", i2c_addr, vin);
+        ESP_LOGI(TAG, "TPS546_%i - Got Vin: %2.3f V", i2c_addr, vin);
         #endif
         return vin;
     }    
@@ -722,7 +722,7 @@ float TPS546_get_iout(int i2c_addr)
         iout = slinear11_2_float(u16_value);
 
     #ifdef DEBUG_TPS546_MEAS
-        ESP_LOGI(TAG, "TPS546_%i Got Iout: %2.3f A", i2c_addr, iout);
+        ESP_LOGI(TAG, "TPS546_%i - Got Iout: %2.3f A", i2c_addr, iout);
     #endif
 
     //set the phase register back to the default
@@ -744,7 +744,7 @@ float TPS546_get_vout(int i2c_addr)
     } else {
         vout = ulinear16_2_float(u16_value, i2c_addr);
     #ifdef DEBUG_TPS546_MEAS
-        ESP_LOGI(TAG, "TPS546_%i Got Vout: %2.3f V", i2c_addr, vout);
+        ESP_LOGI(TAG, "TPS546_%i - Got Vout: %2.3f V", i2c_addr, vout);
     #endif
         return vout;
     }
