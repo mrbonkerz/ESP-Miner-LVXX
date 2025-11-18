@@ -40,6 +40,9 @@ typedef enum
     SUPRA,
     GAMMA,
     GAMMA_TURBO,
+    LV06,
+    LV07,
+    LV08,
 } Family;
 
 typedef struct {
@@ -70,6 +73,7 @@ typedef struct {
     bool DS4432U : 1;
     bool INA260  : 1;
     bool TPS546  : 1;
+    bool TPS546_LV08  : 1;
     // test values
     uint16_t power_consumption_target;
 } DeviceConfig;
@@ -103,6 +107,10 @@ static const FamilyConfig FAMILY_SUPRA       = { .id = SUPRA,       .name = "Sup
 static const FamilyConfig FAMILY_GAMMA       = { .id = GAMMA,       .name = "Gamma",      .asic = ASIC_BM1370, .asic_count = 1, .max_power = 40, .power_offset = 5,  .nominal_voltage = 5,  .voltage_domains = 1, .swarm_color = "green",  };
 static const FamilyConfig FAMILY_GAMMA_TURBO = { .id = GAMMA_TURBO, .name = "GammaTurbo", .asic = ASIC_BM1370, .asic_count = 2, .max_power = 60, .power_offset = 10, .nominal_voltage = 12, .voltage_domains = 1, .swarm_color = "cyan",   };
 
+static const FamilyConfig FAMILY_LV06        = { .id = LV06,        .name = "LV06",       .asic = ASIC_BM1366, .asic_count = 1, .max_power = 40, .power_offset = 12, .nominal_voltage = 12, .voltage_domains = 1, .swarm_color = "orange", };
+static const FamilyConfig FAMILY_LV07        = { .id = LV07,        .name = "LV07",       .asic = ASIC_BM1366, .asic_count = 2, .max_power = 40, .power_offset = 12, .nominal_voltage = 12, .voltage_domains = 1, .swarm_color = "orange", };
+static const FamilyConfig FAMILY_LV08        = { .id = LV08,        .name = "LV08",       .asic = ASIC_BM1366, .asic_count = 9, .max_power = 140,.power_offset = 12, .nominal_voltage = 12, .voltage_domains = 1, .swarm_color = "orange", };
+
 static const FamilyConfig default_families[] = {
     FAMILY_MAX,
     FAMILY_ULTRA,
@@ -110,6 +118,9 @@ static const FamilyConfig default_families[] = {
     FAMILY_SUPRA,
     FAMILY_GAMMA,
     FAMILY_GAMMA_TURBO,
+    FAMILY_LV06,
+    FAMILY_LV07,
+    FAMILY_LV08,
 };
 
 static const DeviceConfig default_configs[] = {
@@ -131,6 +142,10 @@ static const DeviceConfig default_configs[] = {
     { .board_version = "601",  .family = FAMILY_GAMMA,       .EMC2101 = true, .emc_ideality_factor = 0x24, .emc_beta_compensation = 0x00,                     .TPS546 = true,                                                           .power_consumption_target = 19, },
     { .board_version = "602",  .family = FAMILY_GAMMA,       .EMC2101 = true, .emc_ideality_factor = 0x24, .emc_beta_compensation = 0x00,                     .TPS546 = true,                                                           .power_consumption_target = 22, },
     { .board_version = "800",  .family = FAMILY_GAMMA_TURBO, .EMC2103 = true,                                                             .temp_offset = -10, .TPS546 = true,                                                           .power_consumption_target = 12, },
+
+    { .board_version = "301_", .family = FAMILY_LV06,        .EMC2302 = true, .TMP1075 = true,                                            .temp_offset = 5,   .TPS546 = true,                                                           .power_consumption_target = 40, },
+    { .board_version = "301",  .family = FAMILY_LV07,        .EMC2302 = true, .TMP1075 = true,                                            .temp_offset = 5,   .TPS546 = true,                                                           .power_consumption_target = 40, },
+    { .board_version = "302",  .family = FAMILY_LV08,        .EMC2302 = true, .TMP1075 = true,                                            .temp_offset = 5,   .TPS546_LV08 = true,                                                      .power_consumption_target = 140,},
 };
 
 esp_err_t device_config_init(void * pvParameters);
