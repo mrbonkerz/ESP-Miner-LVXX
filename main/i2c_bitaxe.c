@@ -27,7 +27,7 @@ typedef struct {
     char device_tag[32];
 } i2c_dev_map_entry_t;
 
-#define MAX_DEVICES 10 // Adjust as needed
+#define MAX_DEVICES 12 // Adjust as needed
 static i2c_dev_map_entry_t i2c_device_map[MAX_DEVICES];
 static int i2c_device_count = 0;
 
