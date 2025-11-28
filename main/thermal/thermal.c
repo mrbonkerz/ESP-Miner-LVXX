@@ -102,7 +102,7 @@ float Thermal_get_chip_temp2(GlobalState * GLOBAL_STATE)
         return EMC2103_get_external_temp2();
     }
     if (GLOBAL_STATE->DEVICE_CONFIG.TMP1075) {
-        return TMP1075_read_temperature(1);
+        return (TMP1075_read_temperature(0) + TMP1075_read_temperature(1)) / 2;
     }
     return -1;
 }
