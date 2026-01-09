@@ -1,98 +1,120 @@
-#include <stdio.h>
-#include <math.h>
 #include "esp_log.h"
+#include <math.h>
+#include <stdio.h>
 
-#include "vcore.h"
-#include "adc.h"
 #include "DS4432U.h"
-#include "TPS546.h"
 #include "INA260.h"
+#include "TPS546.h"
+#include "adc.h"
 #include "driver/gpio.h"
+#include "vcore.h"
 
 #define GPIO_ASIC_ENABLE CONFIG_GPIO_ASIC_ENABLE
-#define GPIO_PLUG_SENSE  CONFIG_GPIO_PLUG_SENSE
+#define GPIO_PLUG_SENSE CONFIG_GPIO_PLUG_SENSE
 
 static const char *TAG = "vcore";
 
-static TPS546_CONFIG TPS546_CONFIG_DEFAULT = {
-    /* vin voltage */
-    .TPS546_INIT_VIN_ON = 4.8,
-    .TPS546_INIT_VIN_OFF = 4.5,
-    .TPS546_INIT_VIN_UV_WARN_LIMIT = 0, //Set to 0 to ignore. TI Bug in this register
-    .TPS546_INIT_VIN_OV_FAULT_LIMIT = 6.5,
-    /* vout voltage */
-    .TPS546_INIT_SCALE_LOOP = 0.25,
-    .TPS546_INIT_VOUT_MIN = 1,
-    .TPS546_INIT_VOUT_MAX = 2,
-    .TPS546_INIT_VOUT_COMMAND = 1.2,
-    /* iout current */
-    .TPS546_INIT_IOUT_OC_WARN_LIMIT = 25.00, /* A */
-    .TPS546_INIT_IOUT_OC_FAULT_LIMIT = 30.00 /* A */
-};
+static TPS546_CONFIG get_tps546_config(const FamilyConfig * family)
+{
+    TPS546_CONFIG config = {0};
 
-static TPS546_CONFIG TPS546_CONFIG_GAMMATURBO = {
-    /* vin voltage */
-    .TPS546_INIT_VIN_ON = 11.0,
-    .TPS546_INIT_VIN_OFF = 10.5,
-    .TPS546_INIT_VIN_UV_WARN_LIMIT = 11.0,
-    .TPS546_INIT_VIN_OV_FAULT_LIMIT = 14.0,
-    /* vout voltage */
-    .TPS546_INIT_SCALE_LOOP = 0.25,
-    .TPS546_INIT_VOUT_MIN = 1,
-    .TPS546_INIT_VOUT_MAX = 3,
-    .TPS546_INIT_VOUT_COMMAND = 1.2,
-    /* iout current */
-    .TPS546_INIT_IOUT_OC_WARN_LIMIT = 50.00, /* A */
-    .TPS546_INIT_IOUT_OC_FAULT_LIMIT = 55.00 /* A */
-};
+    // Set family-specific parameters
+    switch (family->id) {
+    case GAMMA_TURBO:
+        config.TPS546_INIT_PHASE = TPS546_INIT_PHASE_MULTI;
+        config.TPS546_INIT_VIN_ON = 11.0;
+        config.TPS546_INIT_VIN_OFF = 10.5;
+        config.TPS546_INIT_VIN_UV_WARN_LIMIT = 11.0;
+        config.TPS546_INIT_VIN_OV_FAULT_LIMIT = 14.0;
+        config.TPS546_INIT_SCALE_LOOP = 0.25;
+        config.TPS546_INIT_VOUT_MIN = 1;
+        config.TPS546_INIT_VOUT_MAX = 3;
+        config.TPS546_INIT_VOUT_COMMAND = 1.2;
+        config.TPS546_INIT_IOUT_OC_WARN_LIMIT = 50.00;
+        config.TPS546_INIT_IOUT_OC_FAULT_LIMIT = 55.00;
+        // Multi-phase stacking configuration for 2 TPS modules
+        config.TPS546_INIT_STACK_CONFIG = 0x0001; // 2 modules (One-Slave, 2-phase)
+        config.TPS546_INIT_SYNC_CONFIG = 0xD0;    // Enable Auto Detect SYNC
+        config.TPS546_INIT_COMPENSATION_CONFIG[0] = 0x12;
+        config.TPS546_INIT_COMPENSATION_CONFIG[1] = 0x34;
+        config.TPS546_INIT_COMPENSATION_CONFIG[2] = 0x42;
+        config.TPS546_INIT_COMPENSATION_CONFIG[3] = 0x21;
+        config.TPS546_INIT_COMPENSATION_CONFIG[4] = 0x04;
+        break;
 
-static TPS546_CONFIG TPS546_CONFIG_HEX = {
-    /* vin voltage */
-    .TPS546_INIT_VIN_ON = 11.5,
-    .TPS546_INIT_VIN_OFF = 11.0,
-    .TPS546_INIT_VIN_UV_WARN_LIMIT = 11.0,
-    .TPS546_INIT_VIN_OV_FAULT_LIMIT = 14.0,
-    /* vout voltage */
-    .TPS546_INIT_SCALE_LOOP = 0.125,
-    .TPS546_INIT_VOUT_MIN = 2.5,
-    .TPS546_INIT_VOUT_MAX = 4.5,
-    .TPS546_INIT_VOUT_COMMAND = 3.6,
-    /* iout current */
-    .TPS546_INIT_IOUT_OC_WARN_LIMIT = 25.00, /* A */
-    .TPS546_INIT_IOUT_OC_FAULT_LIMIT = 30.00 /* A */
-};
+    case HEX:
+    case SUPRA_HEX:
+        config.TPS546_INIT_PHASE = TPS546_INIT_PHASE_SINGLE;
+        config.TPS546_INIT_VIN_ON = 11.5;
+        config.TPS546_INIT_VIN_OFF = 11.0;
+        config.TPS546_INIT_VIN_UV_WARN_LIMIT = 11.0;
+        config.TPS546_INIT_VIN_OV_FAULT_LIMIT = 14.0;
+        config.TPS546_INIT_SCALE_LOOP = 0.125;
+        config.TPS546_INIT_VOUT_MIN = 2.5;
+        config.TPS546_INIT_VOUT_MAX = 4.5;
+        config.TPS546_INIT_VOUT_COMMAND = 3.6;
+        config.TPS546_INIT_IOUT_OC_WARN_LIMIT = 25.00;
+        config.TPS546_INIT_IOUT_OC_FAULT_LIMIT = 30.00;
+        // Single-phase configuration
+        config.TPS546_INIT_STACK_CONFIG = 0x0000; // 1 module
+        config.TPS546_INIT_SYNC_CONFIG = 0x10;    // Disable SYNC
+        break;
+    
+    case LV06:
+    case LV07:
+        config.TPS546_INIT_PHASE = TPS546_INIT_PHASE_SINGLE;
+        config.TPS546_INIT_VIN_ON = 11.5;
+        config.TPS546_INIT_VIN_OFF = 11.0;
+        config.TPS546_INIT_VIN_UV_WARN_LIMIT = 11.0;
+        config.TPS546_INIT_VIN_OV_FAULT_LIMIT = 14.0;
+        config.TPS546_INIT_SCALE_LOOP = 0.25;
+        config.TPS546_INIT_VOUT_MIN = 1;
+        config.TPS546_INIT_VOUT_MAX = 3;
+        config.TPS546_INIT_VOUT_COMMAND = 1.2;
+        config.TPS546_INIT_IOUT_OC_WARN_LIMIT = 35.00;
+        config.TPS546_INIT_IOUT_OC_FAULT_LIMIT = 40.00;
+        // Single-phase configuration
+        config.TPS546_INIT_STACK_CONFIG = 0x0000; // 1 module
+        config.TPS546_INIT_SYNC_CONFIG = 0x10;    // Disable SYNC
+        break;
 
-static TPS546_CONFIG TPS546_CONFIG_LV07 = {
-    /* vin voltage */
-    .TPS546_INIT_VIN_ON = 11.5,
-    .TPS546_INIT_VIN_OFF = 11.0,
-    .TPS546_INIT_VIN_UV_WARN_LIMIT = 11.0,
-    .TPS546_INIT_VIN_OV_FAULT_LIMIT = 14.0,
-    /* vout voltage */
-    .TPS546_INIT_SCALE_LOOP = 0.25,
-    .TPS546_INIT_VOUT_MIN = 1,
-    .TPS546_INIT_VOUT_MAX = 3,
-    .TPS546_INIT_VOUT_COMMAND = 1.2,
-    /* iout current */
-    .TPS546_INIT_IOUT_OC_WARN_LIMIT = 35.00, /* A */
-    .TPS546_INIT_IOUT_OC_FAULT_LIMIT = 40.00 /* A */
-};
+    case LV08:
+        config.TPS546_INIT_PHASE = TPS546_INIT_PHASE_SINGLE;
+        config.TPS546_INIT_VIN_ON = 11.5;
+        config.TPS546_INIT_VIN_OFF = 11.0;
+        config.TPS546_INIT_VIN_UV_WARN_LIMIT = 11.0;
+        config.TPS546_INIT_VIN_OV_FAULT_LIMIT = 14.0;
+        config.TPS546_INIT_SCALE_LOOP = 0.125;
+        config.TPS546_INIT_VOUT_MIN = 1;
+        config.TPS546_INIT_VOUT_MAX = 4;
+        config.TPS546_INIT_VOUT_COMMAND = 3.6;
+        config.TPS546_INIT_IOUT_OC_WARN_LIMIT = 45.00;
+        config.TPS546_INIT_IOUT_OC_FAULT_LIMIT = 50.00;
+        // Single-phase configuration
+        config.TPS546_INIT_STACK_CONFIG = 0x0000; // 1 module
+        config.TPS546_INIT_SYNC_CONFIG = 0x10;    // Disable SYNC
+        break;
 
-static TPS546_CONFIG TPS546_CONFIG_LV08 = {
-    /* vin voltage */
-    .TPS546_INIT_VIN_ON = 11.5,
-    .TPS546_INIT_VIN_OFF = 11.0,
-    .TPS546_INIT_VIN_UV_WARN_LIMIT = 11.0,
-    .TPS546_INIT_VIN_OV_FAULT_LIMIT = 14.0,
-    /* vout voltage */
-    .TPS546_INIT_SCALE_LOOP = 0.125,
-    .TPS546_INIT_VOUT_MIN = 1,
-    .TPS546_INIT_VOUT_MAX = 4,
-    .TPS546_INIT_VOUT_COMMAND = 3.6,
-    /* iout current */
-    .TPS546_INIT_IOUT_OC_WARN_LIMIT = 45.00, /* A */
-    .TPS546_INIT_IOUT_OC_FAULT_LIMIT = 50.00 /* A */
-};
+    default: // MAX, ULTRA, SUPRA, GAMMA
+        config.TPS546_INIT_PHASE = TPS546_INIT_PHASE_SINGLE;
+        config.TPS546_INIT_VIN_ON = 4.8;
+        config.TPS546_INIT_VIN_OFF = 4.5;
+        config.TPS546_INIT_VIN_UV_WARN_LIMIT = 0;
+        config.TPS546_INIT_VIN_OV_FAULT_LIMIT = 6.5;
+        config.TPS546_INIT_SCALE_LOOP = 0.25;
+        config.TPS546_INIT_VOUT_MIN = 1;
+        config.TPS546_INIT_VOUT_MAX = 2;
+        config.TPS546_INIT_VOUT_COMMAND = 1.2;
+        config.TPS546_INIT_IOUT_OC_WARN_LIMIT = 25.00;
+        config.TPS546_INIT_IOUT_OC_FAULT_LIMIT = 30.00;
+        // Single-phase configuration
+        config.TPS546_INIT_STACK_CONFIG = 0x0000; // 1 module
+        config.TPS546_INIT_SYNC_CONFIG = 0x10;    // Disable SYNC
+        break;
+    }
+
+    return config;
+}
 
 esp_err_t VCORE_init(GlobalState * GLOBAL_STATE)
 {
@@ -104,26 +126,16 @@ esp_err_t VCORE_init(GlobalState * GLOBAL_STATE)
     if (GLOBAL_STATE->DEVICE_CONFIG.INA260) {
         ESP_RETURN_ON_ERROR(INA260_init(), TAG, "INA260 init failed!");
     }
-    if (GLOBAL_STATE->DEVICE_CONFIG.TPS546 || GLOBAL_STATE->DEVICE_CONFIG.TPS546_LV08) {
+    if (GLOBAL_STATE->DEVICE_CONFIG.TPS546) {
+        TPS546_CONFIG tps_config = get_tps546_config(&GLOBAL_STATE->DEVICE_CONFIG.family);
         switch (GLOBAL_STATE->DEVICE_CONFIG.family.id) {
-            case GAMMA_TURBO:
-                ESP_RETURN_ON_ERROR(TPS546_init(TPS546_CONFIG_GAMMATURBO, 0), TAG, "TPS546 init failed!");
-                break;
-            case HEX:
-            case SUPRA_HEX:
-                ESP_RETURN_ON_ERROR(TPS546_init(TPS546_CONFIG_HEX, 0), TAG, "TPS546 init failed!");
-                break;
-            case LV06:
-            case LV07:
-                ESP_RETURN_ON_ERROR(TPS546_init(TPS546_CONFIG_LV07, 0), TAG, "TPS546 init failed!");
-                break;
             case LV08:
                 for (int addr = 0; addr < 3; addr++) {
-                    ESP_RETURN_ON_ERROR(TPS546_init(TPS546_CONFIG_LV08, addr), TAG, "TPS546 init failed!");
+                    ESP_RETURN_ON_ERROR(TPS546_init(tps_config, addr), TAG, "TPS546 init failed!");
                 }
                 break;
             default:
-                ESP_RETURN_ON_ERROR(TPS546_init(TPS546_CONFIG_DEFAULT, 0), TAG, "TPS546 init failed!");
+                ESP_RETURN_ON_ERROR(TPS546_init(tps_config, 0), TAG, "TPS546 init failed!");
                 break;
         }
     }
@@ -151,7 +163,7 @@ esp_err_t VCORE_init(GlobalState * GLOBAL_STATE)
 esp_err_t VCORE_set_voltage(GlobalState * GLOBAL_STATE, float core_voltage)
 {
     ESP_LOGI(TAG, "Set ASIC voltage = %.3fV", core_voltage);
- 
+
     if (GLOBAL_STATE->DEVICE_CONFIG.DS4432U) {
         if (core_voltage != 0.0f) {
             ESP_RETURN_ON_ERROR(DS4432U_set_voltage(core_voltage), TAG, "DS4432U set voltage failed!");
@@ -174,7 +186,7 @@ esp_err_t VCORE_set_voltage(GlobalState * GLOBAL_STATE, float core_voltage)
     return ESP_OK;
 }
 
-int16_t VCORE_get_voltage_mv(GlobalState * GLOBAL_STATE) 
+int16_t VCORE_get_voltage_mv(GlobalState * GLOBAL_STATE)
 {
     if (GLOBAL_STATE->DEVICE_CONFIG.TPS546) {
         return TPS546_get_vout(0) / GLOBAL_STATE->DEVICE_CONFIG.family.voltage_domains * 1000;
@@ -193,7 +205,7 @@ int16_t VCORE_get_voltage_mv(GlobalState * GLOBAL_STATE)
     return ADC_get_vcore();
 }
 
-esp_err_t VCORE_check_fault(GlobalState * GLOBAL_STATE) 
+esp_err_t VCORE_check_fault(GlobalState * GLOBAL_STATE)
 {
     if (GLOBAL_STATE->DEVICE_CONFIG.TPS546) {
         ESP_RETURN_ON_ERROR(TPS546_check_status(GLOBAL_STATE, 0), TAG, "TPS546 check status failed!");
@@ -206,7 +218,7 @@ esp_err_t VCORE_check_fault(GlobalState * GLOBAL_STATE)
     return ESP_OK;
 }
 
-const char* VCORE_get_fault_string(GlobalState * GLOBAL_STATE)
+const char * VCORE_get_fault_string(GlobalState * GLOBAL_STATE)
 {
     if (GLOBAL_STATE->DEVICE_CONFIG.TPS546 || GLOBAL_STATE->DEVICE_CONFIG.TPS546_LV08) {
         return TPS546_get_error_message();
