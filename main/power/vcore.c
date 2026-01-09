@@ -126,7 +126,7 @@ esp_err_t VCORE_init(GlobalState * GLOBAL_STATE)
     if (GLOBAL_STATE->DEVICE_CONFIG.INA260) {
         ESP_RETURN_ON_ERROR(INA260_init(), TAG, "INA260 init failed!");
     }
-    if (GLOBAL_STATE->DEVICE_CONFIG.TPS546) {
+    if (GLOBAL_STATE->DEVICE_CONFIG.TPS546 || GLOBAL_STATE->DEVICE_CONFIG.TPS546_LV08) {
         TPS546_CONFIG tps_config = get_tps546_config(&GLOBAL_STATE->DEVICE_CONFIG.family);
         switch (GLOBAL_STATE->DEVICE_CONFIG.family.id) {
             case LV08:
