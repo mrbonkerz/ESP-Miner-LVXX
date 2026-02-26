@@ -521,6 +521,7 @@ void TPS546_read_mfr_info(uint8_t *read_mfr_revision, int8_t i2c_addr)
 void TPS546_write_entire_config(int8_t i2c_addr)
 {
     
+    
     ESP_LOGI(TAG, "---Writing new config values to TPS546---");
 
         // ON_OFF_CONFIG

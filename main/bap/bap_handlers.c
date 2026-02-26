@@ -237,7 +237,34 @@ void BAP_send_request(bap_parameter_t param, GlobalState *state) {
             BAP_send_message(BAP_CMD_RES, "poolPort", port_str);
             BAP_send_message(BAP_CMD_RES, "poolUser", state->SYSTEM_MODULE.pool_user);
             break;
-            
+        case BAP_PARAM_SHARES:
+            {
+                char shares_ar_str[64];
+                snprintf(shares_ar_str, sizeof(shares_ar_str), "%llu/%llu", state->SYSTEM_MODULE.shares_accepted, state->SYSTEM_MODULE.shares_rejected);
+                BAP_send_message(BAP_CMD_RES, "shares", shares_ar_str);
+            }
+            break;
+        case BAP_PARAM_BLOCK_HEIGHT:
+            {
+                char block_height_str[32];
+                snprintf(block_height_str, sizeof(block_height_str), "%d", state->block_height);
+                BAP_send_message(BAP_CMD_RES, "block_height", block_height_str);
+            }
+            break;
+        case BAP_PARAM_FOUND_BLOCK:
+            {
+                char block_found_str[16];
+                snprintf(block_found_str, sizeof(block_found_str), "%d", state->SYSTEM_MODULE.block_found);
+                BAP_send_message(BAP_CMD_RES, "block_found", block_found_str);
+            }
+            break;
+        case BAP_PARAM_SHOW_NEW_BLOCK:
+            {
+                char show_new_block_str[2];
+                snprintf(show_new_block_str, sizeof(show_new_block_str), "%d", state->SYSTEM_MODULE.show_new_block);
+                BAP_send_message(BAP_CMD_RES, "show_new_block", show_new_block_str);
+            }
+            break;
         default:
             ESP_LOGE(TAG, "Unsupported request parameter: %d", param);
             break;
@@ -398,6 +425,22 @@ void BAP_handle_settings(const char *parameter, const char *value) {
                 nvs_config_set_bool(NVS_CONFIG_AUTO_FAN_SPEED, auto_fan_speed);
                 BAP_send_message(BAP_CMD_ACK, parameter, "auto_fan_speed_set");
                 return;
+            }
+            break;
+
+        case BAP_PARAM_FOUND_BLOCK:
+            {
+                int block_found_val = atoi(value);
+                bap_global_state->SYSTEM_MODULE.block_found = block_found_val;
+                BAP_send_message(BAP_CMD_ACK, parameter, value);
+            }
+            break;
+
+        case BAP_PARAM_SHOW_NEW_BLOCK:
+            {
+                int show_new_block_val = atoi(value);
+                bap_global_state->SYSTEM_MODULE.show_new_block = (show_new_block_val != 0);
+                BAP_send_message(BAP_CMD_ACK, parameter, value);
             }
             break;
             

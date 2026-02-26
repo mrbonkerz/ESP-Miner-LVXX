@@ -1,11 +1,13 @@
 #ifndef STATISTICS_TASK_H_
 #define STATISTICS_TASK_H_
 
+#include <stdint.h>
+
 typedef struct StatisticsData * StatisticsDataPtr;
 
 struct StatisticsData
 {
-    uint32_t timestamp;
+    uint64_t timestamp;
     float hashrate;
     float hashrate_1m;
     float hashrate_10m;
@@ -22,6 +24,7 @@ struct StatisticsData
     uint16_t fan2RPM;
     int8_t wifiRSSI;
     uint32_t freeHeap;
+    float responseTime;
 };
 
 bool getStatisticData(uint16_t index, StatisticsDataPtr dataOut);

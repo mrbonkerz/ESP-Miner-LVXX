@@ -19,7 +19,7 @@ static const uint8_t hex_val_table[256] = {
 
 size_t bin2hex(const uint8_t *buf, size_t buflen, char *hex, size_t hexlen)
 {
-    if (hexlen < buflen * 2) {
+    if (hexlen <= buflen * 2) {
         return 0;
     }
 
@@ -82,14 +82,16 @@ void double_sha256_bin(const uint8_t *data, const size_t data_len, uint8_t dest[
 
 void midstate_sha256_bin(const uint8_t *data, const size_t data_len, uint8_t dest[32])
 {
-    mbedtls_sha256_context midstate;
+    mbedtls_sha256_context ctx;
 
     // Calculate midstate
-    mbedtls_sha256_init(&midstate);
-    mbedtls_sha256_starts(&midstate, 0);
-    mbedtls_sha256_update(&midstate, data, 64);
+    mbedtls_sha256_init(&ctx);
+    mbedtls_sha256_starts(&ctx, 0);
+    mbedtls_sha256_update(&ctx, data, 64);
 
-    memcpy(dest, midstate.state, 32);
+    memcpy(dest, ctx.state, 32);
+
+    mbedtls_sha256_free(&ctx);
 }
 
 void reverse_32bit_words(const uint8_t src[32], uint8_t dest[32])
@@ -228,10 +230,10 @@ void suffixString(uint64_t val, char * buf, size_t bufsiz, int sigdigits)
     }
 }
 
-float hashCounterToGhs(uint32_t duration_ms, uint32_t counter)
+float hashCounterToGhs(uint64_t duration_us, uint32_t counter)
 {
-    if (duration_ms == 0) return 0.0f;
-    float seconds = duration_ms / 1000.0;
+    if (duration_us == 0) return 0.0f;
+    float seconds = duration_us / 1000000.0;
     float hashrate = counter / seconds * (float)HASH_CNT_LSB; // Make sure it stays in float
     return hashrate / 1e9f; // Convert to Gh/s
 }

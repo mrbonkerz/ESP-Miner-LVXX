@@ -34,14 +34,14 @@ jobs:
       - name: esp-idf build
         uses: espressif/esp-idf-ci-action@v1
         with:
-          esp_idf_version: v5.5.1
+          esp_idf_version: v5.5.2
           target: esp32s3
           command: GITHUB_ACTIONS="true" idf.py build
           path: '.'
       - name: "esp-idf build factory config for ${{ matrix.build_type }}"
         uses: espressif/esp-idf-ci-action@v1
         with:
-          esp_idf_version: v5.5.1
+          esp_idf_version: v5.5.2
           target: esp32s3
           command: /opt/esp/idf/components/nvs_flash/nvs_partition_generator/nvs_partition_gen.py generate config-${{ matrix.build_type }}.cvs config.bin 0x6000
           path: '.'
@@ -53,7 +53,7 @@ jobs:
       - name: "Create factory image for ${{ matrix.build_type }}-${{ github.ref_name }}"
         run: "./merge_bin.sh -c esp-miner-factory-${{ matrix.build_type }}-${{ github.ref_name }}.bin"
       - name: Release esp-miner.bin
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v2.4.2
         if: startsWith(github.ref, 'refs/tags/')
         with:
           prerelease: true

@@ -28,6 +28,7 @@ typedef enum {
 } screen_t;
 
 #define SCREEN_UPDATE_MS 500
+#define BUTTON_WAKE_MS 5000
 
 #define SCR_CAROUSEL_START SCR_URLS
 
@@ -411,24 +412,37 @@ void screen_next()
 
 static void screen_update_cb(lv_timer_t * timer)
 {
+    SystemModule * module = &GLOBAL_STATE->SYSTEM_MODULE;
+
     int32_t display_timeout_config = nvs_config_get_i32(NVS_CONFIG_DISPLAY_TIMEOUT);
 
-    if (0 > display_timeout_config) {
+    uint32_t inactive_time = lv_display_get_inactive_time(NULL);
+    screen_t current_screen = get_current_screen();
+
+    if (module->identify_mode_time_ms > 0) {
+        module->identify_mode_time_ms -= SCREEN_UPDATE_MS;
+    }
+    bool is_identify_mode = module->identify_mode_time_ms > 0;
+
+    bool enable_display = false;
+    if (display_timeout_config < 0) {
         // display always on
-        display_on(true);
-    } else if (0 == display_timeout_config) {
-        // display off
-        display_on(false);
+        enable_display = true;
+    } else if (display_timeout_config == 0) {
+        // display off, except pre-carousel screens or button press
+        if (current_screen < SCR_CAROUSEL_START || inactive_time < BUTTON_WAKE_MS) {
+            enable_display = true;
+        }
     } else {
         // display timeout
         const uint32_t display_timeout = display_timeout_config * 60 * 1000;
 
-        if ((lv_display_get_inactive_time(NULL) > display_timeout) && (SCR_CAROUSEL_START <= get_current_screen())) {
-            display_on(false);
-        } else {
-            display_on(true);
+        if (inactive_time < display_timeout || current_screen < SCR_CAROUSEL_START || is_identify_mode) {
+            enable_display = true;
         }
     }
+
+    display_on(enable_display);
 
     if (GLOBAL_STATE->SELF_TEST_MODULE.is_active) {
         SelfTestModule * self_test = &GLOBAL_STATE->SELF_TEST_MODULE;
@@ -445,13 +459,6 @@ static void screen_update_cb(lv_timer_t * timer)
         return;
     }
 
-    SystemModule * module = &GLOBAL_STATE->SYSTEM_MODULE;
-
-    if (module->identify_mode_time_ms > 0) {
-        module->identify_mode_time_ms -= SCREEN_UPDATE_MS;
-    }
-
-    bool is_identify_mode = module->identify_mode_time_ms > 0;
     if (is_identify_mode == lv_obj_has_flag(identify_image, LV_OBJ_FLAG_HIDDEN)) {
         lv_obj_set_flag(identify_image, LV_OBJ_FLAG_HIDDEN, !is_identify_mode);
         lv_obj_set_style_bg_opa(lv_layer_top(), is_identify_mode ? LV_OPA_COVER : LV_OPA_TRANSP, LV_PART_MAIN);
@@ -492,14 +499,14 @@ static void screen_update_cb(lv_timer_t * timer)
     }
 
     bool is_wifi_status_changed = strcmp(module->wifi_status, lv_label_get_text(connection_wifi_status_label)) != 0;
-    if (module->ap_enabled || is_wifi_status_changed) {
-        if (is_wifi_status_changed) {
-            lv_label_set_text(connection_wifi_status_label, module->wifi_status);
-        }
-
+    if (is_wifi_status_changed) {
+        lv_label_set_text(connection_wifi_status_label, module->wifi_status);
         screen_show(SCR_CONNECTION);
+        return;
+    }
 
-        delays_ms[SCR_CONNECTION] = 0; // Remove delay so whenever the user disables the AP with long press, it goes straight back to carousel
+    if (module->ap_enabled || !module->is_connected) {
+        screen_show(SCR_CONNECTION);
         return;
     }
 
@@ -532,7 +539,7 @@ static void screen_update_cb(lv_timer_t * timer)
     current_hashrate = module->current_hashrate;
 
     if (current_difficulty != module->best_session_nonce_diff) {
-        if (module->block_found) {
+        if (module->show_new_block) {
             lv_obj_set_width(stats_difficulty_label, LV_HOR_RES);
             lv_label_set_long_mode(stats_difficulty_label, LV_LABEL_LONG_SCROLL_CIRCULAR);
             lv_label_set_text_fmt(stats_difficulty_label, "Best: %s   !!! BLOCK FOUND !!!", module->best_session_diff_string);
@@ -558,7 +565,7 @@ static void screen_update_cb(lv_timer_t * timer)
         lv_label_set_text_fmt(mining_network_difficulty_label, "Difficulty: %s", GLOBAL_STATE->network_diff_string);
     }
 
-    if (GLOBAL_STATE->scriptsig != NULL && strcmp(lv_label_get_text(mining_scriptsig_label), GLOBAL_STATE->scriptsig) != 0) {
+    if (strcmp(lv_label_get_text(mining_scriptsig_label), GLOBAL_STATE->scriptsig) != 0) {
         lv_label_set_text(mining_scriptsig_label, GLOBAL_STATE->scriptsig);
     }
 
@@ -611,7 +618,7 @@ static void screen_update_cb(lv_timer_t * timer)
         lv_label_set_text(notification_label, "");
     }
 
-    if (module->block_found) {
+    if (module->show_new_block) {
         if (get_current_screen() != SCR_STATS) {
             screen_show(SCR_STATS);
         }

@@ -10,6 +10,7 @@ import { ToastrModule } from 'ngx-toastr';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
+import { ApiModule, Configuration } from './generated';
 import { EditComponent } from './components/edit/edit.component';
 import { PoolComponent } from './components/pool/pool.component';
 import { NetworkEditComponent } from './components/network-edit/network.edit.component';
@@ -32,6 +33,8 @@ import { ANSIPipe } from './pipes/ansi.pipe';
 import { DateAgoPipe } from './pipes/date-ago.pipe';
 import { HashSuffixPipe } from './pipes/hash-suffix.pipe';
 import { DiffSuffixPipe } from './pipes/diff-suffix.pipe';
+import { AddressPipe } from './pipes/address.pipe';
+import { SatsPipe } from './pipes/sats.pipe';
 import { PrimeNGModule } from './prime-ng.module';
 import { MessageModule } from 'primeng/message';
 import { TooltipModule } from 'primeng/tooltip';
@@ -67,6 +70,8 @@ const components = [
     SettingsComponent,
     HashSuffixPipe,
     DiffSuffixPipe,
+    AddressPipe,
+    SatsPipe,
     ThemeConfigComponent,
     DesignComponent,
     PoolComponent,
@@ -86,7 +91,8 @@ const components = [
     AppLayoutModule,
     MessageModule,
     TooltipModule,
-    DialogModule
+    DialogModule,
+    ApiModule.forRoot(() => new Configuration({ basePath: '' }))
   ],
   providers: [
     { provide: LocationStrategy, useClass: HashLocationStrategy },
