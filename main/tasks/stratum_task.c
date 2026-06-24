@@ -308,7 +308,7 @@ void stratum_primary_heartbeat(void * pvParameters)
         set_socket_options(transport);
 
         int send_uid = 1;
-        STRATUM_V1_subscribe(transport, send_uid++, GLOBAL_STATE->DEVICE_CONFIG.family.asic.name, GLOBAL_STATE->DEVICE_CONFIG.board);
+        STRATUM_V1_subscribe(transport, send_uid++, GLOBAL_STATE->DEVICE_CONFIG.family.asic.name, GLOBAL_STATE->DEVICE_CONFIG.board_version);
         STRATUM_V1_authorize(transport, send_uid++, GLOBAL_STATE->SYSTEM_MODULE.pool_user, GLOBAL_STATE->SYSTEM_MODULE.pool_pass);
 
         char recv_buffer[BUFFER_SIZE];
@@ -529,7 +529,7 @@ void stratum_task(void * pvParameters)
         STRATUM_V1_configure_version_rolling(GLOBAL_STATE->transport, GLOBAL_STATE->send_uid++, &GLOBAL_STATE->version_mask);
 
         // mining.subscribe - ID: 2
-        STRATUM_V1_subscribe(GLOBAL_STATE->transport, GLOBAL_STATE->send_uid++, GLOBAL_STATE->DEVICE_CONFIG.family.asic.name, GLOBAL_STATE->DEVICE_CONFIG.board);
+        STRATUM_V1_subscribe(GLOBAL_STATE->transport, GLOBAL_STATE->send_uid++, GLOBAL_STATE->DEVICE_CONFIG.family.asic.name, GLOBAL_STATE->DEVICE_CONFIG.board_version);
 
         char * username = GLOBAL_STATE->SYSTEM_MODULE.is_using_fallback ? GLOBAL_STATE->SYSTEM_MODULE.fallback_pool_user : GLOBAL_STATE->SYSTEM_MODULE.pool_user;
         char * password = GLOBAL_STATE->SYSTEM_MODULE.is_using_fallback ? GLOBAL_STATE->SYSTEM_MODULE.fallback_pool_pass : GLOBAL_STATE->SYSTEM_MODULE.pool_pass;

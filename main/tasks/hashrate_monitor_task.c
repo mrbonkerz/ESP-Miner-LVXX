@@ -211,9 +211,6 @@ void hashrate_monitor_register_read(void *pvParameters, register_type_t register
         case REGISTER_PLL_PARAM:
             ESP_LOGD(TAG, "PLL param read asic %d: 0x%08" PRIX32, asic_nr, value);
             break;
-        case REGISTER_PLL_PARAM:
-            ESP_LOGD(TAG, "PLL param read asic %d: 0x%08" PRIX32, asic_nr, value);
-            break;
         case REGISTER_INVALID:
             ESP_LOGE(TAG, "Invalid register type");
             break;
