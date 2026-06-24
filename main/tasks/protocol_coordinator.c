@@ -255,7 +255,7 @@ static bool probe_pool_v1(GlobalState *gs, const char *url, uint16_t port,
     }
 
     int send_uid = 1;
-    STRATUM_V1_subscribe(transport, send_uid++, gs->DEVICE_CONFIG.family.asic.name);
+    STRATUM_V1_subscribe(transport, send_uid++, gs->DEVICE_CONFIG.family.asic.name, gs->DEVICE_CONFIG.board_version);
     STRATUM_V1_authorize(transport, send_uid++, user, pass);
 
     char recv_buffer[BUFFER_SIZE];
