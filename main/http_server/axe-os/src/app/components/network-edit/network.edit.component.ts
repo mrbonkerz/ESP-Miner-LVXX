@@ -6,13 +6,10 @@ import { finalize } from 'rxjs/operators';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { DialogService } from 'src/app/services/dialog.service';
 import { LoadingService } from 'src/app/services/loading.service';
+import { LiveDataService } from 'src/app/services/live-data.service';
 import { SystemApiService } from 'src/app/services/system.service';
-
-interface WifiNetwork {
-  ssid: string;
-  rssi: number;
-  authmode: number;
-}
+import { WifiNetwork } from 'src/app/generated/models';
+import { first } from 'rxjs/operators';
 
 @Component({
   selector: 'app-network-edit',
@@ -32,6 +29,7 @@ export class NetworkEditComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private systemService: SystemApiService,
+    private liveDataService: LiveDataService,
     private toastr: ToastrService,
     private loadingService: LoadingService,
     private http: HttpClient,
@@ -40,8 +38,8 @@ export class NetworkEditComponent implements OnInit {
 
   }
   ngOnInit(): void {
-    this.systemService.getInfo(this.uri)
-      .pipe(this.loadingService.lockUIUntilComplete())
+    this.liveDataService.info$
+      .pipe(first(), this.loadingService.lockUIUntilComplete())
       .subscribe(info => {
         this.form = this.fb.group({
           hostname: [info.hostname, [Validators.required]],
@@ -55,6 +53,8 @@ export class NetworkEditComponent implements OnInit {
 
   public updateSystem() {
 
+    const restartAlreadyPending = this.savedChanges;
+    const restartRequired = this.isRestartRequired;
     const form = this.form.getRawValue();
 
     // Allow an empty Wi-Fi password
@@ -73,13 +73,16 @@ export class NetworkEditComponent implements OnInit {
       .pipe(this.loadingService.lockUIUntilComplete())
       .subscribe({
         next: () => {
-          this.toastr.warning('You must restart this device after saving for changes to take effect.');
+          if (restartRequired) {
+            this.toastr.warning('You must restart this device after saving for changes to take effect.');
+          }
           this.toastr.success('Saved network settings');
-          this.savedChanges = true;
+          this.savedChanges = restartAlreadyPending || restartRequired;
+          this.form.markAsPristine();
         },
         error: (err: HttpErrorResponse) => {
           this.toastr.error(`Could not save. ${err.message}`);
-          this.savedChanges = false;
+          this.savedChanges = restartAlreadyPending;
         }
       });
   }
@@ -126,7 +129,7 @@ export class NetworkEditComponent implements OnInit {
             .subscribe((selectedSsid: string) => {
               if (selectedSsid) {
                 this.form.patchValue({ ssid: selectedSsid });
-                this.form.markAsDirty();
+                this.form.get('ssid')?.markAsDirty();
               }
             });
         },
@@ -142,10 +145,22 @@ export class NetworkEditComponent implements OnInit {
       .subscribe({
         next: () => {
           this.toastr.success('Device restarted');
+          this.savedChanges = false;
         },
         error: (err: HttpErrorResponse) => {
           this.toastr.error(`Could not restart. ${err.message}`);
         }
       });
+  }
+
+  get noRestartFields(): string[] {
+    return [
+      'hostname'
+    ];
+  }
+
+  get isRestartRequired(): boolean {
+    return Object.entries(this.form.controls)
+      .some(([field, control]) => control.dirty && !this.noRestartFields.includes(field));
   }
 }

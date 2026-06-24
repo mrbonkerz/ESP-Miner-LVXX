@@ -3,24 +3,39 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include "asic_common.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
+#include "freertos/portmacro.h"
 #include "power_management_task.h"
 #include "hashrate_monitor_task.h"
-#include "serial.h"
-#include "stratum_api.h"
+#include "mining.h"
 #include "coinbase_decoder.h"
 #include "work_queue.h"
 #include "device_config.h"
 #include "display.h"
+#include "scoreboard.h"
 #include "esp_transport.h"
+
+typedef enum {
+    STRATUM_PROTOCOL_UNKNOWN = 0,
+    STRATUM_PROTOCOL_V1 = 1,
+    STRATUM_PROTOCOL_V2 = 2,
+} stratum_protocol_t;
+
+#define STRATUM_V1 "SV1"
+#define STRATUM_V2 "SV2"
+
+// Forward declarations
+struct sv2_conn;
+struct sv2_noise_ctx;
 
 #define STRATUM_USER CONFIG_STRATUM_USER
 #define FALLBACK_STRATUM_USER CONFIG_FALLBACK_STRATUM_USER
 
 #define HISTORY_LENGTH 100
 #define DIFF_STRING_SIZE 10
+#define MAX_BLOCK_SIGNALS 8
+#define MAX_BLOCK_SIGNAL_LEN 16
 
 typedef struct {
     char message[64];
@@ -67,9 +82,12 @@ typedef struct
     uint16_t fallback_pool_difficulty;
     bool pool_extranonce_subscribe;
     bool fallback_pool_extranonce_subscribe;
-    bool pool_decode_coinbase;
-    bool fallback_pool_decode_coinbase;
+    bool pool_decode_coinbase_tx;
+    bool fallback_pool_decode_coinbase_tx;
     float response_time;
+    uint16_t response_share_batch;
+    float process_time;
+    float cpu_usage;
     bool use_fallback_stratum;
     uint16_t pool_is_tls;
     uint16_t fallback_pool_is_tls;
@@ -78,26 +96,43 @@ typedef struct
     char * pool_cert;
     char * fallback_pool_cert;
     bool is_using_fallback;
+    uint16_t fallback_pool_protocol;
     char pool_connection_info[64];
     bool overheat_mode;
+    bool mining_paused;
+    bool pools_unavailable;
     uint16_t power_fault;
     uint32_t lastClockSync;
     bool is_screen_active;
     bool is_firmware_update;
     char firmware_update_filename[20];
     char firmware_update_status[20];
-    char * asic_status;
+    bool hardware_fault;
+    char hardware_fault_msg[64];
+    const char * asic_status;
     char * version;
     char * axeOSVersion;
+    Scoreboard scoreboard;
 } SystemModule;
 
 typedef struct
 {
     bool is_active;
+    uint64_t accepted_count;
+    uint64_t rejected_count;
+    double hashes;
+    pthread_mutex_t lock;
+} SelfTestNonceMeasurement;
+
+typedef struct
+{
+    bool is_active;
     bool is_finished;
-    char *message;
+    SelfTestNonceMeasurement nonce_measurement;
+    const char *message;
     char *result;
     char *finished;
+    esp_err_t system_init_ret;
 } SelfTestModule;
 
 typedef struct
@@ -130,19 +165,25 @@ typedef struct
     uint8_t * valid_jobs;
     pthread_mutex_t valid_jobs_lock;
 
-    uint32_t pool_difficulty;
+    double pool_difficulty;
     bool new_set_mining_difficulty_msg;
     uint32_t version_mask;
     bool new_stratum_version_rolling_msg;
 
     esp_transport_handle_t transport;
+    portMUX_TYPE stratum_mux;
     
     // A message ID that must be unique per request that expects a response.
     // For requests not expecting a response (called notifications), this is null.
     int send_uid;
 
+    stratum_protocol_t stratum_protocol;
+    struct sv2_conn *sv2_conn;
+    struct sv2_noise_ctx *sv2_noise_ctx;
+
     bool ASIC_initalized;
     bool psram_is_available;
+    bool filesystem_is_available;
 
     int block_height;
     char scriptsig[128];
@@ -152,6 +193,8 @@ typedef struct
     uint64_t coinbase_value_user_satoshis;
     uint64_t network_nonce_diff;
     char network_diff_string[DIFF_STRING_SIZE];
+    char block_signals[MAX_BLOCK_SIGNALS][MAX_BLOCK_SIGNAL_LEN];
+    int block_signals_count;
 } GlobalState;
 
 #endif /* GLOBAL_STATE_H_ */

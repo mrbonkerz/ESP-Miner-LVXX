@@ -37,6 +37,11 @@ static uint16_t TPS546_I2C_ADDR[3] = {0x24, 0x7F, 0x14}; //U2, U1, U3
 static TPS546_CONFIG tps546_config;
 
 static esp_err_t TPS546_parse_status(uint16_t, int8_t);
+// Cached values to handle I2C failures robustly per regulator address
+static float last_vin[3] = {0.0f, 0.0f, 0.0f};
+static float last_iout[3] = {0.0f, 0.0f, 0.0f};
+static float last_vout[3] = {0.0f, 0.0f, 0.0f};
+static int last_temp[3] = {0, 0, 0};
 
 /**
  * @brief SMBus read byte
@@ -706,8 +711,13 @@ int TPS546_get_temperature(int8_t i2c_addr)
     uint16_t value = 0;
     int temp;
 
-    smb_read_word(PMBUS_READ_TEMPERATURE_1, &value, i2c_addr);
+    if (smb_read_word(PMBUS_READ_TEMPERATURE_1, &value, i2c_addr) != ESP_OK) {
+        ESP_LOGE(TAG, "Could not read temperature");
+        return last_temp[i2c_addr];
+    }
+
     temp = slinear11_2_int(value);
+    last_temp[i2c_addr] = temp;
     #ifdef DEBUG_TPS546_MEAS
     ESP_LOGI(TAG, "TPS546_%i - Got Temp: %i C", i2c_addr, temp);
     #endif
@@ -722,12 +732,13 @@ float TPS546_get_vin(int8_t i2c_addr)
     /* Get voltage input (ULINEAR16) */
     if (smb_read_word(PMBUS_READ_VIN, &u16_value, i2c_addr) != ESP_OK) {
         ESP_LOGE(TAG, "Could not read VIN");
-        return 0;
+        return last_vin[i2c_addr];
     } else {
         vin = slinear11_2_float(u16_value);
         #ifdef DEBUG_TPS546_MEAS
         ESP_LOGI(TAG, "TPS546_%i - Got Vin: %2.3f V", i2c_addr, vin);
         #endif
+        last_vin[i2c_addr] = vin;
         return vin;
     }    
 }
@@ -740,14 +751,14 @@ float TPS546_get_iout(int8_t i2c_addr)
     /* Get current output (SLINEAR11) */
     if (smb_read_word(PMBUS_READ_IOUT, &u16_value, i2c_addr) != ESP_OK) {
         ESP_LOGE(TAG, "Could not read Iout");
-        return 0;
+        return last_iout[i2c_addr];
     } else {
         iout = slinear11_2_float(u16_value);
 
     #ifdef DEBUG_TPS546_MEAS
         ESP_LOGI(TAG, "TPS546_%i - Got Iout: %2.3f A", i2c_addr, iout);
     #endif
-
+        last_iout[i2c_addr] = iout;
         return iout;
     }
 }
@@ -760,12 +771,13 @@ float TPS546_get_vout(int8_t i2c_addr)
     /* Get voltage output (ULINEAR16) */
     if (smb_read_word(PMBUS_READ_VOUT, &u16_value, i2c_addr) != ESP_OK) {
         ESP_LOGE(TAG, "Could not read Vout");
-        return 0;
+        return last_vout[i2c_addr];
     } else {
         vout = ulinear16_2_float(u16_value, i2c_addr);
     #ifdef DEBUG_TPS546_MEAS
         ESP_LOGI(TAG, "TPS546_%i - Got Vout: %2.3f V", i2c_addr, vout);
     #endif
+        last_vout[i2c_addr] = vout;
         return vout;
     }
 }
@@ -1279,4 +1291,3 @@ esp_err_t TPS546_snapshot_status(TPS546_StatusSnapshot *s, int8_t i2c_addr) {
 
     ESP_LOGE(TAG, "=================================================");
 }
-

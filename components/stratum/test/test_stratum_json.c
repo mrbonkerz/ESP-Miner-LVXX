@@ -65,7 +65,16 @@ TEST_CASE("Parse stratum set_difficulty params", "[mining.set_difficulty]")
     StratumApiV1Message stratum_api_v1_message = {};
     STRATUM_V1_parse(&stratum_api_v1_message, json_string);
     TEST_ASSERT_EQUAL(MINING_SET_DIFFICULTY, stratum_api_v1_message.method);
-    TEST_ASSERT_EQUAL(1638, stratum_api_v1_message.new_difficulty);
+    TEST_ASSERT_EQUAL_DOUBLE(1638.0, stratum_api_v1_message.new_difficulty);
+}
+
+TEST_CASE("Parse stratum set_difficulty params with fractional", "[mining.set_difficulty]")
+{
+    const char *json_string = "{\"id\":null,\"method\":\"mining.set_difficulty\",\"params\":[100.5]}";
+    StratumApiV1Message stratum_api_v1_message = {};
+    STRATUM_V1_parse(&stratum_api_v1_message, json_string);
+    TEST_ASSERT_EQUAL(MINING_SET_DIFFICULTY, stratum_api_v1_message.method);
+    TEST_ASSERT_EQUAL_DOUBLE(100.5, stratum_api_v1_message.new_difficulty);
 }
 
 TEST_CASE("Parse stratum notify params", "[mining.notify]")
@@ -173,4 +182,48 @@ TEST_CASE("Parse stratum result alternative error", "[stratum]")
     TEST_ASSERT_EQUAL(STRATUM_RESULT, stratum_api_v1_message.method);
     TEST_ASSERT_FALSE(stratum_api_v1_message.response_success);
     TEST_ASSERT_EQUAL_STRING("Above target 2", stratum_api_v1_message.error_str);
+}
+
+TEST_CASE("Parse stratum result with error string (Stale)", "[stratum]")
+{
+    StratumApiV1Message stratum_api_v1_message = {};
+    const char *json_string = "{\"result\":false,\"error\":\"Stale\",\"id\":618}";
+    STRATUM_V1_parse(&stratum_api_v1_message, json_string);
+    TEST_ASSERT_EQUAL(618, stratum_api_v1_message.message_id);
+    TEST_ASSERT_EQUAL(STRATUM_RESULT, stratum_api_v1_message.method);
+    TEST_ASSERT_FALSE(stratum_api_v1_message.response_success);
+    TEST_ASSERT_EQUAL_STRING("Stale", stratum_api_v1_message.error_str);
+}
+
+TEST_CASE("Parse stratum result with null result and error string", "[stratum]")
+{
+    StratumApiV1Message stratum_api_v1_message = {};
+    const char *json_string = "{\"result\":null,\"error\":\"Stale\",\"id\":618}";
+    STRATUM_V1_parse(&stratum_api_v1_message, json_string);
+    TEST_ASSERT_EQUAL(618, stratum_api_v1_message.message_id);
+    TEST_ASSERT_EQUAL(STRATUM_RESULT, stratum_api_v1_message.method);
+    TEST_ASSERT_FALSE(stratum_api_v1_message.response_success);
+    TEST_ASSERT_EQUAL_STRING("Stale", stratum_api_v1_message.error_str);
+}
+
+TEST_CASE("Parse stratum error array format", "[stratum]")
+{
+    StratumApiV1Message stratum_api_v1_message = {};
+    const char *json_string = "{\"id\":50,\"result\":null,\"error\":[21,\"Job not found\",\"\"]}";
+    STRATUM_V1_parse(&stratum_api_v1_message, json_string);
+    TEST_ASSERT_EQUAL(50, stratum_api_v1_message.message_id);
+    TEST_ASSERT_EQUAL(STRATUM_RESULT, stratum_api_v1_message.method);
+    TEST_ASSERT_FALSE(stratum_api_v1_message.response_success);
+    TEST_ASSERT_EQUAL_STRING("Job not found", stratum_api_v1_message.error_str);
+}
+
+TEST_CASE("Parse stratum error jsonrpc object with code", "[stratum]")
+{
+    StratumApiV1Message stratum_api_v1_message = {};
+    const char *json_string = "{\"jsonrpc\":\"2.0\",\"error\":{\"code\":22,\"message\":\"duplicate share\",\"data\":null},\"id\":42}";
+    STRATUM_V1_parse(&stratum_api_v1_message, json_string);
+    TEST_ASSERT_EQUAL(42, stratum_api_v1_message.message_id);
+    TEST_ASSERT_EQUAL(STRATUM_RESULT, stratum_api_v1_message.method);
+    TEST_ASSERT_FALSE(stratum_api_v1_message.response_success);
+    TEST_ASSERT_EQUAL_STRING("duplicate share", stratum_api_v1_message.error_str);
 }
