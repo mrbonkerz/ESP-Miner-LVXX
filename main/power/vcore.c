@@ -62,6 +62,7 @@ static TPS546_CONFIG get_tps546_config(const FamilyConfig * family)
     
     case LV06:
     case LV07:
+    case LV08:
         config.TPS546_INIT_PHASE = TPS546_INIT_PHASE_SINGLE;
         config.TPS546_INIT_VIN_ON = 11.5;
         config.TPS546_INIT_VIN_OFF = 11.0;
@@ -78,22 +79,22 @@ static TPS546_CONFIG get_tps546_config(const FamilyConfig * family)
         config.TPS546_INIT_SYNC_CONFIG = 0x10;    // Disable SYNC
         break;
 
-    case LV08:
-        config.TPS546_INIT_PHASE = TPS546_INIT_PHASE_SINGLE;
-        config.TPS546_INIT_VIN_ON = 11.5;
-        config.TPS546_INIT_VIN_OFF = 11.0;
-        config.TPS546_INIT_VIN_UV_WARN_LIMIT = 11.0;
-        config.TPS546_INIT_VIN_OV_FAULT_LIMIT = 14.0;
-        config.TPS546_INIT_SCALE_LOOP = 0.125;
-        config.TPS546_INIT_VOUT_MIN = 1;
-        config.TPS546_INIT_VOUT_MAX = 4;
-        config.TPS546_INIT_VOUT_COMMAND = 3.6;
-        config.TPS546_INIT_IOUT_OC_WARN_LIMIT = 45.00;
-        config.TPS546_INIT_IOUT_OC_FAULT_LIMIT = 50.00;
-        // Single-phase configuration
-        config.TPS546_INIT_STACK_CONFIG = 0x0000; // 1 module
-        config.TPS546_INIT_SYNC_CONFIG = 0x10;    // Disable SYNC
-        break;
+    // case LV08:
+    //     config.TPS546_INIT_PHASE = TPS546_INIT_PHASE_SINGLE;
+    //     config.TPS546_INIT_VIN_ON = 11.5;
+    //     config.TPS546_INIT_VIN_OFF = 11.0;
+    //     config.TPS546_INIT_VIN_UV_WARN_LIMIT = 11.0;
+    //     config.TPS546_INIT_VIN_OV_FAULT_LIMIT = 14.0;
+    //     config.TPS546_INIT_SCALE_LOOP = 0.125;
+    //     config.TPS546_INIT_VOUT_MIN = 1;
+    //     config.TPS546_INIT_VOUT_MAX = 4;
+    //     config.TPS546_INIT_VOUT_COMMAND = 3.6;
+    //     config.TPS546_INIT_IOUT_OC_WARN_LIMIT = 45.00;
+    //     config.TPS546_INIT_IOUT_OC_FAULT_LIMIT = 50.00;
+    //     // Single-phase configuration
+    //     config.TPS546_INIT_STACK_CONFIG = 0x0000; // 1 module
+    //     config.TPS546_INIT_SYNC_CONFIG = 0x10;    // Disable SYNC
+    //     break;
 
     default: // MAX, ULTRA, SUPRA, GAMMA
         config.TPS546_INIT_PHASE = TPS546_INIT_PHASE_SINGLE;
