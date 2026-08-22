@@ -3,7 +3,7 @@
 #include <esp_heap_caps.h>
 #include <math.h>
 #include "esp_log.h"
-#include "esp_timer.h"
+#include "global_state.h"
 #include "system.h"
 #include "asic_common.h"
 #include "asic.h"
@@ -11,7 +11,7 @@
 
 #define EPSILON 0.0001f
 
-#define HASHRATE_UNIT 0x100000uLL // Hashrate register unit (2^24 hashes)
+#define HASHRATE_UNIT 0x100000uLL // Hashrate register unit (2^20 hashes)
 
 #define POLL_RATE 1000
 #define HASHRATE_1M_SIZE (60000 / POLL_RATE)  // 12
@@ -195,6 +195,8 @@ void hashrate_monitor_task(void *pvParameters)
         } else {
             SYSTEM_MODULE->current_hashrate = 0;
         }
+
+        SYSTEM_noinit_update(SYSTEM_MODULE);
 
         vTaskDelayUntil(&taskWakeTime, POLL_RATE / portTICK_PERIOD_MS);
     }

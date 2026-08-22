@@ -1,10 +1,9 @@
-import { Component, ViewChild } from '@angular/core';
+import { Component, ViewChild, ElementRef } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import { HttpErrorResponse, HttpEventType } from '@angular/common/http';
+import { getHttpErrorMessage } from 'src/app/utils/error-handler';
 import { ToastrService } from 'ngx-toastr';
-import { FileUploadHandlerEvent, FileUpload } from 'primeng/fileupload';
 import { GithubUpdateService } from 'src/app/services/github-update.service';
-import { LoadingService } from 'src/app/services/loading.service';
 import { SystemApiService } from 'src/app/services/system.service';
 import { LiveDataService } from 'src/app/services/live-data.service';
 import { LocalStorageService } from 'src/app/local-storage.service';
@@ -14,9 +13,10 @@ import { SystemInfo } from 'src/app/generated/models';
 const IGNORE_RELEASE_CHECK_WARNING = 'IGNORE_RELEASE_CHECK_WARNING';
 
 @Component({
-  selector: 'app-update',
-  templateUrl: './update.component.html',
-  styleUrls: ['./update.component.scss']
+    selector: 'app-update',
+    templateUrl: './update.component.html',
+    styleUrls: ['./update.component.scss'],
+    standalone: false
 })
 export class UpdateComponent {
 
@@ -28,8 +28,8 @@ export class UpdateComponent {
 
   public info$: Observable<SystemInfo>;
 
-  @ViewChild('firmwareUpload') firmwareUpload!: FileUpload;
-  @ViewChild('websiteUpload') websiteUpload!: FileUpload;
+  @ViewChild('firmwareUpload') firmwareUpload!: ElementRef<HTMLInputElement>;
+  @ViewChild('websiteUpload') websiteUpload!: ElementRef<HTMLInputElement>;
 
   @ViewChild('privacyModal') privacyModal?: ModalComponent;
   @ViewChild('progressModal') progressModal?: ModalComponent;
@@ -38,11 +38,12 @@ export class UpdateComponent {
   public updateStatus: 'progress' | 'success' | 'error' = 'progress';
   public updateMessage: string = '';
 
+  private currentVersion: string | undefined = undefined;
+
   constructor(
     private systemService: SystemApiService,
     private liveDataService: LiveDataService,
     private toastrService: ToastrService,
-    private loadingService: LoadingService,
     private githubUpdateService: GithubUpdateService,
     private localStorageService: LocalStorageService,
   ) {
@@ -51,11 +52,40 @@ export class UpdateComponent {
     }));
 
     this.info$ = this.liveDataService.info$;
+
+    // Reload page if firmware version changes
+    this.liveDataService.info$.subscribe(info => {
+      if (this.currentVersion === undefined) {
+        this.currentVersion = info.version;
+      } else if (info.version !== this.currentVersion) {
+        window.location.reload();
+      }
+    });
+
+    // Reload page when device comes back online after a successful update
+    this.liveDataService.connected$.subscribe(connected => {
+      if (connected && this.updateStatus === 'success') {
+        window.location.reload();
+      }
+    });
   }
 
-  otaUpdate(event: FileUploadHandlerEvent) {
-    const file = event.files[0];
-    this.firmwareUpload.clear(); // clear the file upload component
+  onFileSelected(event: Event, target: 'websiteUpload' | 'firmwareUpload') {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      const file = input.files[0];
+      if (target === 'websiteUpload') {
+        this.otaWWWUpdate(file);
+      } else {
+        this.otaUpdate(file);
+      }
+    }
+  }
+
+  otaUpdate(file: File) {
+    if (this.firmwareUpload) {
+      this.firmwareUpload.nativeElement.value = '';
+    }
 
     if (file.name != 'esp-miner.bin') {
       this.toastrService.error('Incorrect file, looking for esp-miner.bin.');
@@ -76,9 +106,8 @@ export class UpdateComponent {
             this.firmwareUpdateProgress = Math.round((event.loaded / (event.total as number)) * 100);
           } else if (event.type === HttpEventType.Response) {
             if (event.ok) {
-              this.toastrService.success('Device restarted');
               this.updateStatus = 'success';
-              this.updateMessage = 'Firmware updated. Device has been successfully restarted.';
+              this.updateMessage = 'Firmware updated. The page will reload when the device comes back online.';
             } else {
               this.updateStatus = 'error';
               this.updateMessage = event.statusText || 'An unknown error occurred.';
@@ -87,12 +116,12 @@ export class UpdateComponent {
           else if (event instanceof HttpErrorResponse)
           {
             this.updateStatus = 'error';
-            this.updateMessage = event.error?.message || event.error || event.message || 'Unknown error occurred';
+            this.updateMessage = getHttpErrorMessage(event);
           }
         },
         error: (err) => {
           this.updateStatus = 'error';
-          this.updateMessage = err.error?.message || err.error || err.message || 'Unknown error occurred';
+          this.updateMessage = getHttpErrorMessage(err);
         },
         complete: () => {
           this.firmwareUpdateProgress = 0;
@@ -100,9 +129,10 @@ export class UpdateComponent {
       });
   }
 
-  otaWWWUpdate(event: FileUploadHandlerEvent) {
-    const file = event.files[0];
-    this.websiteUpload.clear(); // clear the file upload component
+  otaWWWUpdate(file: File) {
+    if (this.websiteUpload) {
+      this.websiteUpload.nativeElement.value = '';
+    }
 
     if (file.name != 'www.bin') {
       this.toastrService.error('Incorrect file, looking for www.bin.');
@@ -124,10 +154,7 @@ export class UpdateComponent {
           } else if (event.type === HttpEventType.Response) {
             if (event.ok) {
               this.updateStatus = 'success';
-              this.updateMessage = 'AxeOS updated. The page will reload in a few seconds.';
-              setTimeout(() => {
-                window.location.reload();
-              }, 2000);
+              this.updateMessage = 'AxeOS updated. The page will reload when the device comes back online.';
             } else {
               this.updateStatus = 'error';
               this.updateMessage = event.statusText || 'An unknown error occurred.';
@@ -136,12 +163,12 @@ export class UpdateComponent {
           else if (event instanceof HttpErrorResponse)
           {
             this.updateStatus = 'error';
-            this.updateMessage = event.error?.message || event.error || event.message || 'Unknown error occurred';
+            this.updateMessage = getHttpErrorMessage(event);
           }
         },
         error: (err) => {
           this.updateStatus = 'error';
-          this.updateMessage = err.error?.message || err.error || err.message || 'Unknown error occurred';
+          this.updateMessage = getHttpErrorMessage(err);
         },
         complete: () => {
           this.websiteUpdateProgress = 0;
@@ -159,7 +186,7 @@ export class UpdateComponent {
       .replace(/(https?:\/\/github\.com\/.+\/(.+[^\s])+)/gim, (match, p1, p2) => `<a href="${p1}" target="_blank">${match.includes('/pull/') ? '#' : ''}${p2}</a>`) // Regular links
       .replace(/@([^\s]+)/gim, ' <a href="https://github.com/$1" target="_blank">@$1</a> ') // Username links
       .replace(/^\s*[-+*]\s?(.+)$/gim, '<li>$1</li>') // Unordered list
-      .replace(/`([^`]+)`/gim, '<code class="surface-100">$1</code>') // Code
+      .replace(/`([^`]+)`/gim, '<code class="bg-surface-100 rounded px-1">$1</code>') // Code
       .replace(/\r\n\r\n/gim, '<br>'); // Breaks
 
     return toHTML.trim();
@@ -186,5 +213,47 @@ export class UpdateComponent {
     }
 
     this.localStorageService.setBool(IGNORE_RELEASE_CHECK_WARNING, true);
+  }
+
+  public switchPartition(label: string): void {
+    if (confirm(`Set ${label} as the next boot partition? The device will restart to apply this change.`)) {
+      this.systemService.switchBootPartition(label).subscribe({
+        next: (resp) => {
+          this.toastrService.success(resp.message);
+        },
+        error: (err) => {
+          this.toastrService.error(err.error?.message || err.message || 'Failed to switch partition');
+        }
+      });
+    }
+  }
+
+  public restart(): void {
+    if (confirm('Are you sure you want to restart the device?')) {
+      this.systemService.restart().subscribe({
+        next: () => {
+          this.toastrService.success('Restart command sent.');
+        },
+        error: (err) => {
+          this.toastrService.error(err.error?.message || err.message || 'Failed to restart device');
+        }
+      });
+    }
+  }
+
+  public toggleCustomWWW(checked: boolean): void {
+    const value = checked ? 1 : 0;
+    this.systemService.updateSystem('', { useCustomWWW: value }).subscribe({
+      next: () => {
+        this.toastrService.success(
+          `Web UI source changed to ${checked ? 'Custom' : 'Embedded'}. A device restart is required to apply the change.`,
+          'Setting Saved',
+          { timeOut: 8000 }
+        );
+      },
+      error: (err) => {
+        this.toastrService.error(`Failed to change Web UI source. ${getHttpErrorMessage(err)}`);
+      }
+    });
   }
 }

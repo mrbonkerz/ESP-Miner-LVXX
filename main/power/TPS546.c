@@ -9,6 +9,7 @@
 #include "pmbus_commands.h"
 
 #include "i2c_bitaxe.h"
+#include "global_state.h"
 #include "TPS546.h"
 
 #define DEBUG_TPS546_MEAS 1 //uncomment to debug TPS546 measurements
@@ -550,8 +551,9 @@ void TPS546_write_entire_config(int8_t i2c_addr)
     smb_write_byte(PMBUS_PHASE, tps546_config.TPS546_INIT_PHASE, i2c_addr);
 
     /* Switch frequency */
-    ESP_LOGI(TAG, "Setting FREQUENCY: %dMHz", TPS546_INIT_FREQUENCY);
-    smb_write_word(PMBUS_FREQUENCY_SWITCH, int_2_slinear11(TPS546_INIT_FREQUENCY), i2c_addr);
+    uint16_t freq = tps546_config.TPS546_INIT_FREQUENCY ? tps546_config.TPS546_INIT_FREQUENCY : TPS546_DEFAULT_FREQUENCY;
+    ESP_LOGI(TAG, "Setting FREQUENCY: %dKHz", freq);
+    smb_write_word(PMBUS_FREQUENCY_SWITCH, int_2_slinear11(freq), i2c_addr);
 
     if(tps546_config.TPS546_INIT_COMPENSATION_CONFIG[0] != 0 &&
        tps546_config.TPS546_INIT_COMPENSATION_CONFIG[1] != 0 &&

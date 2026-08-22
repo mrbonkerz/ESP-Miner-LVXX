@@ -88,10 +88,13 @@ typedef struct {
 
 #define SV2_PENDING_JOBS_SIZE 8
 
+#define SV2_MAX_ACTIVE_JOB_IDS 16
+
 // SV2 connection state
 typedef struct sv2_conn {
     uint32_t channel_id;
-    uint32_t sequence_number;
+    uint32_t sequence_number;       // also the count of shares submitted
+    uint32_t resolved_shares;       // shares the pool has accepted or rejected
     uint8_t target[32]; // U256 LE target
     bool channel_opened;
 
@@ -110,6 +113,10 @@ typedef struct sv2_conn {
     uint8_t  extranonce_prefix_len;
     uint8_t  extranonce_size;              // total extranonce bytes assigned by pool
     sv2_ext_job_t *ext_pending_jobs[SV2_PENDING_JOBS_SIZE];
+
+    // Active job IDs tracking for duplicate detection
+    uint32_t active_job_ids[SV2_MAX_ACTIVE_JOB_IDS];
+    int active_job_ids_count;
 } sv2_conn_t;
 
 // --- Frame encode/decode ---
@@ -194,10 +201,5 @@ sv2_ext_job_t *sv2_parse_new_extended_mining_job(const uint8_t *payload, uint32_
                                                   uint32_t *channel_id_out);
 
 void sv2_ext_job_free(sv2_ext_job_t *job);
-
-// --- Helpers ---
-
-// Convert U256 LE target to pool difficulty (pdiff)
-uint32_t sv2_target_to_pdiff(const uint8_t target[32]);
 
 #endif /* SV2_PROTOCOL_H */

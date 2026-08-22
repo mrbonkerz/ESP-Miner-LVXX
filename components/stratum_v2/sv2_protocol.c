@@ -2,6 +2,7 @@
 #include "utils.h"
 #include <string.h>
 #include <math.h>
+#include <stdlib.h>
 
 // --- Little-endian helpers ---
 
@@ -541,16 +542,4 @@ void sv2_ext_job_free(sv2_ext_job_t *job)
     free(job->coinbase_prefix);
     free(job->coinbase_suffix);
     free(job);
-}
-
-// --- Helpers ---
-
-uint32_t sv2_target_to_pdiff(const uint8_t target[32])
-{
-    double target_d = le256todouble(target);
-    if (target_d == 0.0) return UINT32_MAX;
-    double pdiff = truediffone / target_d;
-    if (pdiff > (double)UINT32_MAX) return UINT32_MAX;
-    if (pdiff < 1.0) return 1;
-    return (uint32_t)pdiff;
 }

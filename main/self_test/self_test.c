@@ -18,12 +18,12 @@
 #include "hashrate_monitor_task.h"
 #include "PID.h"
 #include "self_test.h"
+#include "stratum_api.h"
 
 #define GPIO_ASIC_ENABLE CONFIG_GPIO_ASIC_ENABLE
 
 /////Test Constants/////
 // Test Fan Speed
-#define FAN_SPEED_TARGET_MIN 1000 // RPM
 #define SELF_TEST_MIN_FAN_PERCENT 10.0f
 #define SELF_TEST_MAX_FAN_PERCENT 100.0f
 #define SELF_TEST_PID_SAMPLE_TIME_MS 100
@@ -264,9 +264,8 @@ static float self_test_get_nonce_hashrate(GlobalState * GLOBAL_STATE, uint64_t e
     return (float)(hashes / seconds / 1000000000.0);
 }
 
-void self_test_record_nonce(void * pvParameters, double nonce_diff)
+void self_test_record_nonce(GlobalState * GLOBAL_STATE, double nonce_diff)
 {
-    GlobalState * GLOBAL_STATE = (GlobalState *) pvParameters;
     SelfTestNonceMeasurement * measurement = &GLOBAL_STATE->SELF_TEST_MODULE.nonce_measurement;
     double ticket_diff = GLOBAL_STATE->DEVICE_CONFIG.family.asic.difficulty;
 
@@ -295,11 +294,9 @@ static bool self_test_should_run()
     return gpio_get_level(CONFIG_GPIO_BUTTON_BOOT) == 0; // LOW when pressed
 }
 
-esp_err_t self_test_init(void * pvParameters)
+esp_err_t self_test_init(GlobalState * GLOBAL_STATE)
 {
     if (self_test_should_run()) {
-        GlobalState * GLOBAL_STATE = (GlobalState *) pvParameters;
-
         GLOBAL_STATE->SELF_TEST_MODULE.is_active = true;
         pthread_mutex_init(&GLOBAL_STATE->SELF_TEST_MODULE.nonce_measurement.lock, NULL);
         GLOBAL_STATE->DEVICE_CONFIG.family.asic.difficulty = DIFFICULTY;
@@ -338,10 +335,8 @@ void self_test_reset()
     }
 }
 
-void self_test_show_message(void * pvParameters, const char * msg)
+void self_test_show_message(GlobalState * GLOBAL_STATE, const char * msg)
 {
-    GlobalState * GLOBAL_STATE = (GlobalState *) pvParameters;
-    
     if (!GLOBAL_STATE->SELF_TEST_MODULE.is_active) return;
 
     GLOBAL_STATE->SELF_TEST_MODULE.message = msg;
@@ -351,7 +346,7 @@ void self_test_show_message(void * pvParameters, const char * msg)
 static esp_err_t test_fan_sense(GlobalState * GLOBAL_STATE)
 {
     uint16_t fan_speed = Thermal_get_fan_speed(&GLOBAL_STATE->DEVICE_CONFIG);
-    uint16_t target_speed = FAN_SPEED_TARGET_MIN;
+    uint16_t target_speed = nvs_config_get_u16(NVS_CONFIG_SELF_TEST_FAN_SPEED);
 
     ESP_LOGI(TAG, "fanSpeed: %d RPM", fan_speed);
     if (GLOBAL_STATE->DEVICE_CONFIG.family.id == GAMMA_TURBO) {
@@ -532,6 +527,9 @@ void self_test_task(void * pvParameters)
 
     if (msg.method == MINING_NOTIFY) {
         ESP_LOGI(TAG, "Enqueuing mock work into stratum_queue");
+        // No stratum task runs during self-test, so set the V1 free function
+        // ourselves for the mock job we are about to enqueue.
+        GLOBAL_STATE->stratum_queue.free_fn = (void (*)(void *)) STRATUM_V1_free_mining_notify;
         queue_enqueue(&GLOBAL_STATE->stratum_queue, msg.mining_notification);
     } else {
         ESP_LOGE(TAG, "Failed to parse mock mining notification");

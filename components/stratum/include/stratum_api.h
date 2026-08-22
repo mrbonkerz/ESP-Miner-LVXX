@@ -1,7 +1,6 @@
 #ifndef STRATUM_API_H
 #define STRATUM_API_H
 
-#include "cJSON.h"
 #include <stdint.h>
 #include <stdbool.h>
 #include <sys/time.h>
@@ -17,18 +16,18 @@
 
 typedef enum
 {
-    STRATUM_UNKNOWN,
+    METHOD_UNKNOWN,
     MINING_NOTIFY,
     MINING_SET_DIFFICULTY,
     MINING_SET_VERSION_MASK,
     MINING_SET_EXTRANONCE,
     MINING_PING,
     STRATUM_RESULT,
-    STRATUM_RESULT_SETUP,
-    STRATUM_RESULT_VERSION_MASK,
     STRATUM_RESULT_SUBSCRIBE,
+    STRATUM_RESULT_CONFIGURE,
     CLIENT_RECONNECT,
-    CLIENT_SHOW_MESSAGE
+    CLIENT_SHOW_MESSAGE,
+    CLIENT_GET_VERSION,
 } stratum_method;
 
 typedef enum
@@ -38,10 +37,7 @@ typedef enum
     CUSTOM_CRT = 2,
 } tls_mode;
 
-static const int  STRATUM_ID_CONFIGURE    = 1;
-static const int  STRATUM_ID_SUBSCRIBE    = 2;
-
-typedef struct
+typedef struct mining_notify
 {
     char *job_id;
     char *prev_block_hash;
@@ -55,9 +51,9 @@ typedef struct
     bool clean_jobs;
 } mining_notify;
 
-typedef struct
+typedef struct StratumApiV1Message
 {
-    char * extranonce_str;
+    char *extranonce_str;
     int extranonce_2_len;
 
     int message_id;
@@ -72,33 +68,38 @@ typedef struct
     uint32_t version_mask;
     // result
     bool response_success;
-    char * error_str;
+    char *error_str;
+    char *show_message;
+    char *version_string;
 } StratumApiV1Message;
 
-typedef struct {
+typedef struct RequestTiming
+{
     int64_t timestamp_us;
     bool tracking;
 } RequestTiming;
 
 esp_transport_handle_t STRATUM_V1_transport_init(tls_mode tls, char * cert);
 
-void STRATUM_V1_initialize_buffer();
+void STRATUM_V1_initialize_buffer(void);
 
 char *STRATUM_V1_receive_jsonrpc_line(esp_transport_handle_t transport);
 
 int STRATUM_V1_subscribe(esp_transport_handle_t transport, int send_uid, const char * model, const char * board);
 
-void STRATUM_V1_parse(StratumApiV1Message *message, const char *stratum_json);
+bool STRATUM_V1_parse(StratumApiV1Message *message, const char *stratum_json);
 
 void STRATUM_V1_reset_message(StratumApiV1Message *message);
 
-void STRATUM_V1_free_mining_notify(mining_notify *params);
+void STRATUM_V1_free_mining_notify(mining_notify *mining_notify);
 
 int STRATUM_V1_authorize(esp_transport_handle_t transport, int send_uid, const char *username, const char *pass);
 
 int STRATUM_V1_configure_version_rolling(esp_transport_handle_t transport, int send_uid, uint32_t * version_mask);
 
 int STRATUM_V1_pong(esp_transport_handle_t transport, int message_id);
+
+int STRATUM_V1_send_version(esp_transport_handle_t transport, int message_id);
 
 int STRATUM_V1_suggest_difficulty(esp_transport_handle_t transport, int send_uid, uint32_t difficulty);
 

@@ -4,6 +4,7 @@
 #include "global_state.h"
 #include <lwip/tcpip.h>
 #include "stratum_v1_task.h"
+#include "stratum_api.h"
 #include "stratum_socket.h"
 #include "protocol_coordinator.h"
 #include "connect.h"
@@ -11,7 +12,6 @@
 #include <esp_sntp.h>
 #include "esp_timer.h"
 #include "esp_transport.h"
-#include "esp_transport_tcp.h"
 #include <stdbool.h>
 #include <string.h>
 #include "utils.h"
@@ -41,8 +41,40 @@
 #define TRANSPORT_TIMEOUT_MS 5000
 
 #define BUFFER_SIZE 1024
+#define MAX_ACTIVE_JOB_IDS 16
 
 static const char *TAG = "stratum_v1_task";
+
+static bool add_active_job_id(char **active_job_ids, int *count, const char *job_id)
+{
+    for (int i = 0; i < *count; i++) {
+        if (active_job_ids[i] && strcmp(active_job_ids[i], job_id) == 0) {
+            return false;
+        }
+    }
+    if (*count < MAX_ACTIVE_JOB_IDS) {
+        active_job_ids[*count] = strdup(job_id);
+        if (active_job_ids[*count]) {
+            (*count)++;
+        }
+    } else {
+        free(active_job_ids[0]);
+        for (int i = 1; i < MAX_ACTIVE_JOB_IDS; i++) {
+            active_job_ids[i - 1] = active_job_ids[i];
+        }
+        active_job_ids[MAX_ACTIVE_JOB_IDS - 1] = strdup(job_id);
+    }
+    return true;
+}
+
+static void clear_active_job_ids(char **active_job_ids, int *count)
+{
+    for (int i = 0; i < *count; i++) {
+        free(active_job_ids[i]);
+        active_job_ids[i] = NULL;
+    }
+    *count = 0;
+}
 
 static StratumApiV1Message stratum_api_v1_message = {};
 
@@ -87,8 +119,9 @@ static void decode_mining_notification(GlobalState * GLOBAL_STATE, const mining_
     }
     memset(result, 0, sizeof(mining_notification_result_t));
 
-    const char *user = GLOBAL_STATE->SYSTEM_MODULE.is_using_fallback ? GLOBAL_STATE->SYSTEM_MODULE.fallback_pool_user : GLOBAL_STATE->SYSTEM_MODULE.pool_user;
-    bool decode_coinbase_tx = GLOBAL_STATE->SYSTEM_MODULE.is_using_fallback ? GLOBAL_STATE->SYSTEM_MODULE.fallback_pool_decode_coinbase_tx : GLOBAL_STATE->SYSTEM_MODULE.pool_decode_coinbase_tx;
+    uint16_t pool_idx = GLOBAL_STATE->SYSTEM_MODULE.is_using_fallback ? GLOBAL_STATE->SYSTEM_MODULE.secondary_pool_index : GLOBAL_STATE->SYSTEM_MODULE.primary_pool_index;
+    const char *user = GLOBAL_STATE->SYSTEM_MODULE.pools[pool_idx].user;
+    bool decode_coinbase_tx = GLOBAL_STATE->SYSTEM_MODULE.pools[pool_idx].decode_coinbase_tx;
 
     if (coinbase_process_notification(mining_notification,
                                      GLOBAL_STATE->extranonce_str,
@@ -171,9 +204,9 @@ void stratum_v1_task(void *pvParameters)
 {
     GlobalState *GLOBAL_STATE = (GlobalState *)pvParameters;
 
-    bool use_fallback = GLOBAL_STATE->SYSTEM_MODULE.is_using_fallback;
-    char *stratum_url = use_fallback ? GLOBAL_STATE->SYSTEM_MODULE.fallback_pool_url : GLOBAL_STATE->SYSTEM_MODULE.pool_url;
-    uint16_t port = use_fallback ? GLOBAL_STATE->SYSTEM_MODULE.fallback_pool_port : GLOBAL_STATE->SYSTEM_MODULE.pool_port;
+    uint16_t pool_idx = GLOBAL_STATE->SYSTEM_MODULE.is_using_fallback ? GLOBAL_STATE->SYSTEM_MODULE.secondary_pool_index : GLOBAL_STATE->SYSTEM_MODULE.primary_pool_index;
+    char *stratum_url = GLOBAL_STATE->SYSTEM_MODULE.pools[pool_idx].url;
+    uint16_t port = GLOBAL_STATE->SYSTEM_MODULE.pools[pool_idx].port;
 
     // Set V1-specific free function for the work queue
     GLOBAL_STATE->stratum_queue.free_fn = (void (*)(void *))STRATUM_V1_free_mining_notify;
@@ -182,11 +215,15 @@ void stratum_v1_task(void *pvParameters)
     int retry_attempts = 0;
     int retry_critical_attempts = 0;
 
+    char *active_job_ids[MAX_ACTIVE_JOB_IDS] = {0};
+    int active_job_ids_count = 0;
+
     ESP_LOGI(TAG, "Opening connection to pool: %s:%d", stratum_url, port);
     while (1) {
         // Check if coordinator wants us to shut down
         if (protocol_coordinator_v1_should_shutdown()) {
             ESP_LOGI(TAG, "Coordinator requested shutdown, exiting");
+            clear_active_job_ids(active_job_ids, &active_job_ids_count);
             protocol_coordinator_v1_exited();
             vTaskDelete(NULL);
         }
@@ -209,13 +246,17 @@ void stratum_v1_task(void *pvParameters)
             // recovery — see protocol_coordinator.c.
             ESP_LOGW(TAG, "Max V1 retry attempts reached (%d), notifying coordinator", retry_attempts);
             stratum_v1_close_connection(GLOBAL_STATE);
+            clear_active_job_ids(active_job_ids, &active_job_ids_count);
             protocol_coordinator_notify_failure();
             vTaskDelete(NULL);
             return;
         }
 
-        stratum_url = GLOBAL_STATE->SYSTEM_MODULE.is_using_fallback ? GLOBAL_STATE->SYSTEM_MODULE.fallback_pool_url : GLOBAL_STATE->SYSTEM_MODULE.pool_url;
-        port = GLOBAL_STATE->SYSTEM_MODULE.is_using_fallback ? GLOBAL_STATE->SYSTEM_MODULE.fallback_pool_port : GLOBAL_STATE->SYSTEM_MODULE.pool_port;
+        pool_idx = GLOBAL_STATE->SYSTEM_MODULE.is_using_fallback ? GLOBAL_STATE->SYSTEM_MODULE.secondary_pool_index : GLOBAL_STATE->SYSTEM_MODULE.primary_pool_index;
+        stratum_url = GLOBAL_STATE->SYSTEM_MODULE.pools[pool_idx].url;
+        port = GLOBAL_STATE->SYSTEM_MODULE.pools[pool_idx].port;
+
+        clear_active_job_ids(active_job_ids, &active_job_ids_count);
 
         stratum_connection_info_t conn_info;
         if (stratum_socket_resolve(stratum_url, port, &conn_info) != ESP_OK) {
@@ -227,8 +268,8 @@ void stratum_v1_task(void *pvParameters)
 
         ESP_LOGI(TAG, "Connecting to: stratum+tcp://%s:%d (%s)", stratum_url, port, conn_info.host_ip);
 
-        tls_mode tls = GLOBAL_STATE->SYSTEM_MODULE.is_using_fallback ? GLOBAL_STATE->SYSTEM_MODULE.fallback_pool_tls : GLOBAL_STATE->SYSTEM_MODULE.pool_tls;
-        char * cert = GLOBAL_STATE->SYSTEM_MODULE.is_using_fallback ? GLOBAL_STATE->SYSTEM_MODULE.fallback_pool_cert : GLOBAL_STATE->SYSTEM_MODULE.pool_cert;
+        tls_mode tls = GLOBAL_STATE->SYSTEM_MODULE.pools[pool_idx].tls;
+        char * cert = GLOBAL_STATE->SYSTEM_MODULE.pools[pool_idx].cert;
         retry_critical_attempts = 0;
 
         GLOBAL_STATE->transport = STRATUM_V1_transport_init(tls, cert);
@@ -290,8 +331,8 @@ void stratum_v1_task(void *pvParameters)
         // mining.subscribe - ID: 2
         STRATUM_V1_subscribe(GLOBAL_STATE->transport, stratum_get_next_uid(GLOBAL_STATE), GLOBAL_STATE->DEVICE_CONFIG.family.asic.name, GLOBAL_STATE->DEVICE_CONFIG.board_version);
 
-        char *username = use_fallback ? GLOBAL_STATE->SYSTEM_MODULE.fallback_pool_user : GLOBAL_STATE->SYSTEM_MODULE.pool_user;
-        char *password = use_fallback ? GLOBAL_STATE->SYSTEM_MODULE.fallback_pool_pass : GLOBAL_STATE->SYSTEM_MODULE.pool_pass;
+        char *username = GLOBAL_STATE->SYSTEM_MODULE.pools[pool_idx].user;
+        char *password = GLOBAL_STATE->SYSTEM_MODULE.pools[pool_idx].pass;
 
         int authorize_message_id = stratum_get_next_uid(GLOBAL_STATE);
 
@@ -303,6 +344,7 @@ void stratum_v1_task(void *pvParameters)
             if (protocol_coordinator_v1_should_shutdown()) {
                 ESP_LOGI(TAG, "Coordinator requested shutdown during recv loop, exiting");
                 stratum_v1_close_connection(GLOBAL_STATE);
+                clear_active_job_ids(active_job_ids, &active_job_ids_count);
                 protocol_coordinator_v1_exited();
                 vTaskDelete(NULL);
             }
@@ -325,89 +367,153 @@ void stratum_v1_task(void *pvParameters)
 
             int64_t receive_time_us = esp_timer_get_time();
 
-            STRATUM_V1_parse(&stratum_api_v1_message, line);
+            bool reconnect_requested = false;
+            if (!STRATUM_V1_parse(&stratum_api_v1_message, line)) {
+                ESP_LOGE(TAG, "Failed to parse Stratum message, ignoring");
+                STRATUM_V1_reset_message(&stratum_api_v1_message);
+                free(line);
+                continue;
+            }
             free(line);
 
-            if (stratum_api_v1_message.method == MINING_NOTIFY) {
-                GLOBAL_STATE->SYSTEM_MODULE.work_received++;
-                SYSTEM_notify_new_ntime(GLOBAL_STATE, stratum_api_v1_message.mining_notification->ntime);
-                if (stratum_api_v1_message.mining_notification->clean_jobs &&
-                    (GLOBAL_STATE->stratum_queue.count > 0)) {
-                    SYSTEM_clean_jobs_queue(GLOBAL_STATE);
-                }
-                if (GLOBAL_STATE->stratum_queue.count == QUEUE_SIZE) {
-                    mining_notify *next_notify_json_str = (mining_notify *) queue_dequeue(&GLOBAL_STATE->stratum_queue);
-                    STRATUM_V1_free_mining_notify(next_notify_json_str);
-                }
-                queue_enqueue(&GLOBAL_STATE->stratum_queue, stratum_api_v1_message.mining_notification);
-                decode_mining_notification(GLOBAL_STATE, stratum_api_v1_message.mining_notification);
-                stratum_api_v1_message.mining_notification = NULL;
-            } else if (stratum_api_v1_message.method == MINING_SET_DIFFICULTY) {
-                ESP_LOGI(TAG, "Set pool difficulty: %.2f", stratum_api_v1_message.new_difficulty);
-                GLOBAL_STATE->pool_difficulty = stratum_api_v1_message.new_difficulty;
-                GLOBAL_STATE->new_set_mining_difficulty_msg = true;
-            } else if (stratum_api_v1_message.method == MINING_SET_VERSION_MASK ||
-                    stratum_api_v1_message.method == STRATUM_RESULT_VERSION_MASK) {
-                ESP_LOGI(TAG, "Set version mask: %08lx", stratum_api_v1_message.version_mask);
-                GLOBAL_STATE->version_mask = stratum_api_v1_message.version_mask;
-                GLOBAL_STATE->new_stratum_version_rolling_msg = true;
-            } else if (stratum_api_v1_message.method == MINING_SET_EXTRANONCE ||
-                    stratum_api_v1_message.method == STRATUM_RESULT_SUBSCRIBE) {
-                // Validate extranonce_2_len to prevent buffer overflow
-                if (stratum_api_v1_message.extranonce_2_len > MAX_EXTRANONCE_2_LEN) {
-                    ESP_LOGW(TAG, "Extranonce_2_len %d exceeds maximum %d, clamping to maximum",
-                             stratum_api_v1_message.extranonce_2_len, MAX_EXTRANONCE_2_LEN);
-                    stratum_api_v1_message.extranonce_2_len = MAX_EXTRANONCE_2_LEN;
-                }
-                ESP_LOGI(TAG, "Set extranonce: %s, extranonce_2_len: %d", stratum_api_v1_message.extranonce_str, stratum_api_v1_message.extranonce_2_len);
-                char *old_extranonce_str = GLOBAL_STATE->extranonce_str;
-                GLOBAL_STATE->extranonce_str = stratum_api_v1_message.extranonce_str;
-                stratum_api_v1_message.extranonce_str = NULL;
-                GLOBAL_STATE->extranonce_2_len = stratum_api_v1_message.extranonce_2_len;
-                free(old_extranonce_str);
-            } else if (stratum_api_v1_message.method == MINING_PING) {
-                STRATUM_V1_pong(GLOBAL_STATE->transport, stratum_api_v1_message.message_id);
-            } else if (stratum_api_v1_message.method == CLIENT_RECONNECT) {
-                ESP_LOGE(TAG, "Pool requested client reconnect...");
-                stratum_v1_close_connection(GLOBAL_STATE);
-                break;
-            } else if (stratum_api_v1_message.method == STRATUM_RESULT) {
-                float response_time_ms = STRATUM_V1_get_response_time_ms(stratum_api_v1_message.message_id, receive_time_us);
-                if (stratum_api_v1_message.response_success) {
-                    ESP_LOGI(TAG, "message result accepted");
-                    if (response_time_ms >= 0) {
-                        ESP_LOGI(TAG, "Stratum response time: %.1f ms", response_time_ms);
-                        GLOBAL_STATE->SYSTEM_MODULE.response_time = response_time_ms;
-                        SYSTEM_notify_accepted_share(GLOBAL_STATE);
+            switch (stratum_api_v1_message.method) {
+                case METHOD_UNKNOWN:
+                    // Should never happen
+                    break;
+
+                case MINING_NOTIFY:
+                    {
+                        mining_notify *notify = stratum_api_v1_message.mining_notification;
+                        bool is_duplicate = false;
+                        if (notify && notify->job_id) {
+                            if (notify->clean_jobs) {
+                                clear_active_job_ids(active_job_ids, &active_job_ids_count);
+                            }
+                            is_duplicate = !add_active_job_id(active_job_ids, &active_job_ids_count, notify->job_id);
+                        }
+
+                        if (is_duplicate) {
+                            ESP_LOGW(TAG, "Ignoring duplicate notify for job %s", notify ? notify->job_id : "unknown");
+                        } else {
+                            GLOBAL_STATE->SYSTEM_MODULE.work_received++;
+                            SYSTEM_notify_new_ntime(GLOBAL_STATE, stratum_api_v1_message.mining_notification->ntime);
+                            if (stratum_api_v1_message.mining_notification->clean_jobs &&
+                                (GLOBAL_STATE->stratum_queue.count > 0)) {
+                                SYSTEM_clean_jobs_queue(GLOBAL_STATE);
+                            }
+                            if (GLOBAL_STATE->stratum_queue.count == QUEUE_SIZE) {
+                                mining_notify *next_notify_json_str = (mining_notify *) queue_dequeue(&GLOBAL_STATE->stratum_queue);
+                                STRATUM_V1_free_mining_notify(next_notify_json_str);
+                            }
+                            queue_enqueue(&GLOBAL_STATE->stratum_queue, stratum_api_v1_message.mining_notification);
+                            decode_mining_notification(GLOBAL_STATE, stratum_api_v1_message.mining_notification);
+                            stratum_api_v1_message.mining_notification = NULL;
+                        }
                     }
-                } else {
-                    ESP_LOGW(TAG, "message result rejected: %s", stratum_api_v1_message.error_str);
-                    if (response_time_ms >= 0) {
-                        SYSTEM_notify_rejected_share(GLOBAL_STATE, stratum_api_v1_message.error_str);
+                    break;
+
+                case MINING_SET_DIFFICULTY:
+                    ESP_LOGI(TAG, "Set pool difficulty: %.2f", stratum_api_v1_message.new_difficulty);
+                    GLOBAL_STATE->pool_difficulty = stratum_api_v1_message.new_difficulty;
+                    GLOBAL_STATE->new_set_mining_difficulty_msg = true;
+                    break;
+
+                case MINING_SET_VERSION_MASK:
+                    ESP_LOGI(TAG, "Set version mask: %08lx", stratum_api_v1_message.version_mask);
+                    GLOBAL_STATE->version_mask = stratum_api_v1_message.version_mask;
+                    GLOBAL_STATE->new_stratum_version_rolling_msg = true;
+                    break;
+
+                case STRATUM_RESULT_CONFIGURE:
+                    if (stratum_api_v1_message.response_success) {
+                        ESP_LOGI(TAG, "Configure result accepted, version mask: %08lx", stratum_api_v1_message.version_mask);
+                        GLOBAL_STATE->version_mask = stratum_api_v1_message.version_mask;
+                        GLOBAL_STATE->new_stratum_version_rolling_msg = true;
+                        protocol_coordinator_notify_success();
+                    } else {
+                        ESP_LOGE(TAG, "Configure result rejected: %s", stratum_api_v1_message.error_str);
                     }
-                }
-            } else if (stratum_api_v1_message.method == STRATUM_RESULT_SETUP) {
-                // Reset retry attempts after successfully receiving data.
-                retry_attempts = 0;
-                // Tell the coordinator setup succeeded so it clears its
-                // failure counter and pools_unavailable.
-                protocol_coordinator_notify_success();
-                if (stratum_api_v1_message.response_success) {
-                    ESP_LOGI(TAG, "setup message accepted");
-                    uint16_t difficulty = GLOBAL_STATE->SYSTEM_MODULE.is_using_fallback ? GLOBAL_STATE->SYSTEM_MODULE.fallback_pool_difficulty : GLOBAL_STATE->SYSTEM_MODULE.pool_difficulty;
-                    if (stratum_api_v1_message.message_id == authorize_message_id && difficulty > 0) {
-                        STRATUM_V1_suggest_difficulty(GLOBAL_STATE->transport, stratum_get_next_uid(GLOBAL_STATE), difficulty);
+                    break;
+
+                case MINING_SET_EXTRANONCE:
+                case STRATUM_RESULT_SUBSCRIBE:
+                    // Validate extranonce_2_len to prevent buffer overflow
+                    if (stratum_api_v1_message.extranonce_2_len > MAX_EXTRANONCE_2_LEN) {
+                        ESP_LOGW(TAG, "Extranonce_2_len %d exceeds maximum %d, clamping to maximum",
+                                 stratum_api_v1_message.extranonce_2_len, MAX_EXTRANONCE_2_LEN);
+                        stratum_api_v1_message.extranonce_2_len = MAX_EXTRANONCE_2_LEN;
                     }
-                    bool extranonce_subscribe = GLOBAL_STATE->SYSTEM_MODULE.is_using_fallback ? GLOBAL_STATE->SYSTEM_MODULE.fallback_pool_extranonce_subscribe : GLOBAL_STATE->SYSTEM_MODULE.pool_extranonce_subscribe;
-                    if (extranonce_subscribe) {
-                        STRATUM_V1_extranonce_subscribe(GLOBAL_STATE->transport, stratum_get_next_uid(GLOBAL_STATE));
+                    ESP_LOGI(TAG, "Set extranonce: %s, extranonce_2_len: %d", stratum_api_v1_message.extranonce_str, stratum_api_v1_message.extranonce_2_len);
+                    {
+                        char *old_extranonce_str = GLOBAL_STATE->extranonce_str;
+                        GLOBAL_STATE->extranonce_str = stratum_api_v1_message.extranonce_str;
+                        stratum_api_v1_message.extranonce_str = NULL;
+                        GLOBAL_STATE->extranonce_2_len = stratum_api_v1_message.extranonce_2_len;
+                        free(old_extranonce_str);
+                        GLOBAL_STATE->reset_extranonce2 = true;
                     }
-                } else {
-                    ESP_LOGE(TAG, "setup message rejected: %s", stratum_api_v1_message.error_str);
-                }
+                    break;
+
+                case MINING_PING:
+                    STRATUM_V1_pong(GLOBAL_STATE->transport, stratum_api_v1_message.message_id);
+                    break;
+
+                case CLIENT_RECONNECT:
+                    ESP_LOGE(TAG, "Pool requested client reconnect...");
+                    stratum_v1_close_connection(GLOBAL_STATE);
+                    reconnect_requested = true;
+                    break;
+
+                case CLIENT_SHOW_MESSAGE:
+                    break;
+
+                case CLIENT_GET_VERSION:
+                    STRATUM_V1_send_version(GLOBAL_STATE->transport, stratum_api_v1_message.message_id);
+                    break;
+                case STRATUM_RESULT:
+                    {
+                        float response_time_ms = STRATUM_V1_get_response_time_ms(stratum_api_v1_message.message_id, receive_time_us);
+                        if (response_time_ms >= 0) {
+                            if (stratum_api_v1_message.response_success) {
+                                ESP_LOGI(TAG, "message result accepted");
+                                ESP_LOGI(TAG, "Stratum response time: %.1f ms", response_time_ms);
+                                GLOBAL_STATE->SYSTEM_MODULE.response_time = response_time_ms;
+                                SYSTEM_notify_accepted_share(GLOBAL_STATE);
+                            } else {
+                                ESP_LOGW(TAG, "message result rejected: %s", stratum_api_v1_message.error_str);
+                                SYSTEM_notify_rejected_share(GLOBAL_STATE, stratum_api_v1_message.error_str);
+                            }
+                        } else {
+                            // Reset retry attempts after successfully receiving data.
+                            retry_attempts = 0;
+                            // Tell the coordinator setup succeeded so it clears its
+                            // failure counter and pools_unavailable.
+                            protocol_coordinator_notify_success();
+                            if (stratum_api_v1_message.response_success) {
+                                ESP_LOGI(TAG, "setup message accepted");
+                                if (stratum_api_v1_message.message_id == authorize_message_id) {
+                                    uint16_t difficulty = GLOBAL_STATE->SYSTEM_MODULE.pools[pool_idx].difficulty;
+                                    if (difficulty > 0) {
+                                        STRATUM_V1_suggest_difficulty(GLOBAL_STATE->transport, stratum_get_next_uid(GLOBAL_STATE), difficulty);
+                                    }
+                                    bool extranonce_subscribe = GLOBAL_STATE->SYSTEM_MODULE.pools[pool_idx].extranonce_subscribe;
+                                    if (extranonce_subscribe) {
+                                        STRATUM_V1_extranonce_subscribe(GLOBAL_STATE->transport, stratum_get_next_uid(GLOBAL_STATE));
+                                    }
+                                }
+                            } else {
+                                ESP_LOGE(TAG, "setup message rejected: %s", stratum_api_v1_message.error_str);
+                            }
+                        }
+                    }
+                    break;
             }
             STRATUM_V1_reset_message(&stratum_api_v1_message);
+            if (reconnect_requested) {
+                break;
+            }
         }
     }
+    clear_active_job_ids(active_job_ids, &active_job_ids_count);
     vTaskDelete(NULL);
 }
