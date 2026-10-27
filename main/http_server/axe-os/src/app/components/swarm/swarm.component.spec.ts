@@ -64,6 +64,18 @@ describe('SwarmComponent', () => {
     expect(component).toBeTruthy();
   });
 
+  it('uses each peer\'s own presets for low and normal frequencies', () => {
+    expect(component.getDeviceNotification({ frequency: 150, frequencyOptions: [100, 200] })).toBeUndefined();
+    expect(component.getDeviceNotification({ frequency: 150, frequencyOptions: [200, 300] })?.msg).toBe('Frequency Low');
+  });
+
+  it('does not guess a minimum for a legacy peer or hide higher-priority faults', () => {
+    expect(component.getDeviceNotification({ frequency: 100 })).toBeUndefined();
+    expect(component.getDeviceNotification({ frequency: 0 })?.msg).toBe('Frequency Low');
+    expect(component.getDeviceNotification({ frequency: 100, frequencyOptions: [200], overheat_mode: 1 })?.msg).toBe('Overheated');
+    expect(component.getDeviceNotification({ frequency: 100, frequencyOptions: [200], miningPaused: true })?.msg).toBe('Paused');
+  });
+
   it('should render swarm list details and custom components when devices are present', () => {
     component.swarm = [
       {

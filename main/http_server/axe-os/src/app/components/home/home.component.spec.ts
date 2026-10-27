@@ -11,7 +11,7 @@ import { AppChartComponent } from 'src/app/components/chart/app-chart.component'
 import { TooltipDirective } from 'src/app/directives/tooltip.directive';
 import { DropdownComponent } from 'src/app/components/dropdown/dropdown.component';
 import { ProgressbarComponent } from 'src/app/components/progressbar/progressbar.component';
-import { BehaviorSubject, of } from 'rxjs';
+import { BehaviorSubject, of, Subject } from 'rxjs';
 
 import { HashSuffixPipe } from 'src/app/pipes/hash-suffix.pipe';
 import { DiffSuffixPipe } from 'src/app/pipes/diff-suffix.pipe';
@@ -124,6 +124,7 @@ const mockLiveDataService = {
 };
 
 const mockSystemApiService = {
+  getAsicSettings: () => of({ frequencyOptions: [100, 200, 300] }),
   getStatistics: () => of(mockSystemStatistics),
   updateSystem: () => of(null),
   restart: () => of(null),
@@ -195,6 +196,38 @@ describe('HomeComponent', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('uses the device presets for frequency messages', () => {
+    const info = { ...mockSystemInfo, frequency: 100 };
+    const error = { duration: 0, startTime: null };
+    component.handleSystemMessages(info, error, [100, 200, 300]);
+    expect(component.messages.some(message => message.type === 'FREQUENCY_LOW')).toBeFalse();
+    component.handleSystemMessages({ ...info, frequency: 99 }, error, [100, 200, 300]);
+    expect(component.messages.some(message => message.type === 'FREQUENCY_LOW')).toBeTrue();
+    component.handleSystemMessages(info, error, [100, 200, 300]);
+    expect(component.messages.some(message => message.type === 'FREQUENCY_LOW')).toBeFalse();
+  });
+
+  it('keeps telemetry and messages live while settings load and after settings fail', () => {
+    fixture.destroy();
+    const settings = new Subject<{ frequencyOptions: number[] }>();
+    spyOn(mockSystemApiService, 'getAsicSettings').and.returnValue(settings);
+    mockLiveDataService.info$.next({ ...mockSystemInfo, frequency: 100 });
+    fixture = TestBed.createComponent(HomeComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    expect(component.messages.some(message => message.type === 'FREQUENCY_LOW')).toBeFalse();
+    expect(component['latestInfo']?.frequency).toBe(100);
+    settings.next({ frequencyOptions: [100, 200, 300] });
+    mockLiveDataService.info$.next({ ...mockSystemInfo, frequency: 99 });
+    expect(component.messages.some(message => message.type === 'FREQUENCY_LOW')).toBeTrue();
+
+    settings.error(new Error('Settings unavailable'));
+    expect(component.messages.some(message => message.type === 'FREQUENCY_LOW')).toBeFalse();
+    mockLiveDataService.info$.next({ ...mockSystemInfo, frequency: 0 });
+    expect(component.messages.some(message => message.type === 'FREQUENCY_LOW')).toBeTrue();
   });
 
   it('should render the dashboard widgets and dropdowns when info is loaded', () => {

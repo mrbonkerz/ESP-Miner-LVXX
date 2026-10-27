@@ -1,7 +1,8 @@
 import { Component, OnInit, ViewChild, Input, OnDestroy, ElementRef, HostListener, effect, NgZone, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
-import { map, Observable, shareReplay, Subscription, switchMap, tap, first, Subject, takeUntil, BehaviorSubject, filter, combineLatest } from 'rxjs';
+import { map, Observable, shareReplay, Subscription, switchMap, tap, first, Subject, takeUntil, BehaviorSubject, filter, combineLatest, catchError, of, startWith } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { getHttpErrorMessage } from 'src/app/utils/error-handler';
+import { isFrequencyLow } from 'src/app/utils/common-functions';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { ToastrService } from 'ngx-toastr';
 import { DateAgoPipe } from 'src/app/pipes/date-ago.pipe';
@@ -1057,10 +1058,15 @@ export class HomeComponent implements OnInit, OnDestroy {
       shareReplay({ refCount: true, bufferSize: 1 })
     );
 
-    this.infoSubscription = combineLatest([this.info$, this.systemInfoError$])
+    const asicSettings$ = this.systemService.getAsicSettings().pipe(
+      catchError(() => of(undefined)),
+      startWith(undefined)
+    );
+
+    this.infoSubscription = combineLatest([this.info$, this.systemInfoError$, asicSettings$])
       .pipe(takeUntil(this.destroy$))
-      .subscribe(([info, systemInfoError]) => {
-        this.handleSystemMessages(info, systemInfoError);
+      .subscribe(([info, systemInfoError, asicSettings]) => {
+        this.handleSystemMessages(info, systemInfoError, asicSettings?.frequencyOptions);
         this.setTitle(info, systemInfoError);
         this.cd.markForCheck();
       });
@@ -1185,7 +1191,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     return -1;
   }
 
-  public handleSystemMessages(info: ISystemInfo, systemInfoError: ISystemInfoError) {
+  public handleSystemMessages(info: ISystemInfo, systemInfoError: ISystemInfoError, frequencyOptions?: number[]) {
     const updateMessage = (
       condition: boolean,
       type: MessageType,
@@ -1215,7 +1221,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     updateMessage(!!info.overheat_mode, 'DEVICE_OVERHEAT', 'error', 'Device has overheated - See settings');
     updateMessage(!!info.power_fault, 'POWER_FAULT', 'error', `${info.power_fault} Check your Power Supply.`);
     updateMessage(!!info.hardware_fault, 'HARDWARE_FAULT', 'error', `${info.hardware_fault}`);
-    updateMessage(!info.frequency || info.frequency < 400, 'FREQUENCY_LOW', 'warn', 'Device frequency is set low - See settings');
+    updateMessage(isFrequencyLow(info.frequency, frequencyOptions), 'FREQUENCY_LOW', 'warn', 'Device frequency is set low - See settings');
     updateMessage(!!info.isUsingFallbackStratum, 'FALLBACK_STRATUM', 'warn', 'Using fallback pool - Share stats reset. Check Pool Settings and / or reboot Device.');
     if (info.coinbaseOutputs && info.coinbaseOutputs.length > 0) {
       let percentage = this.getPayoutPercentage(info);
