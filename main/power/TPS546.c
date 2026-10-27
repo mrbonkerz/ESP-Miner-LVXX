@@ -12,7 +12,7 @@
 #include "global_state.h"
 #include "TPS546.h"
 
-#define DEBUG_TPS546_MEAS 1 //uncomment to debug TPS546 measurements
+//#define DEBUG_TPS546_MEAS 1 //uncomment to debug TPS546 measurements
 //#define DEBUG_TPS546_STATUS 1 //uncomment to debug TPS546 status bits
 
 #define I2C_MASTER_NUM 0 /*!< I2C master i2c port number, the number of i2c peripheral interfaces available will depend on the chip */
@@ -43,6 +43,8 @@ static float last_vin[3] = {0.0f, 0.0f, 0.0f};
 static float last_iout[3] = {0.0f, 0.0f, 0.0f};
 static float last_vout[3] = {0.0f, 0.0f, 0.0f};
 static int last_temp[3] = {0, 0, 0};
+// Fault state per regulator, power_fault is set when any of them has a fault
+static bool fault_active[3] = {false, false, false};
 
 /**
  * @brief SMBus read byte
@@ -792,13 +794,16 @@ esp_err_t TPS546_check_status(GlobalState * GLOBAL_STATE, int8_t i2c_addr) {
     ESP_RETURN_ON_ERROR(smb_read_word(PMBUS_STATUS_WORD, &status, i2c_addr), TAG, "Failed to read STATUS_WORD");
     //determine if this is a fault we care about
     if (status & (TPS546_STATUS_OFF | TPS546_STATUS_VOUT_OV | TPS546_STATUS_IOUT_OC | TPS546_STATUS_VIN_UV | TPS546_STATUS_TEMP)) {
-        if (SYSTEM_MODULE->power_fault == 0) {
+        if (!fault_active[i2c_addr]) {
             ESP_RETURN_ON_ERROR(TPS546_parse_status(status, i2c_addr), TAG, "Failed to parse STATUS_WORD");
-            SYSTEM_MODULE->power_fault = 1;
+            fault_active[i2c_addr] = true;
         }
     } else {
-        SYSTEM_MODULE->power_fault = 0;
+        fault_active[i2c_addr] = false;
     }
+
+    // A healthy regulator must not clear a fault on another one
+    SYSTEM_MODULE->power_fault = fault_active[0] || fault_active[1] || fault_active[2];
     return ESP_OK;
 }
 
@@ -814,7 +819,7 @@ static esp_err_t TPS546_parse_status(uint16_t status, int8_t i2c_addr) {
     uint8_t u8_value;
 
     //print the status word
-    ESP_LOGE(TAG, "Status: 0x%04X", status);
+    ESP_LOGE(TAG, "TPS546_%i - Status: 0x%04X", i2c_addr, status);
 
     if (status & TPS546_STATUS_BUSY) {
         ESP_LOGE(TAG, "Voltage regulator was busy and unable to respond");

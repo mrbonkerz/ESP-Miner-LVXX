@@ -228,9 +228,16 @@ esp_err_t VCORE_set_voltage(GlobalState * GLOBAL_STATE, float core_voltage)
     }
     if (GLOBAL_STATE->DEVICE_CONFIG.TPS546_LV08) {
         uint16_t voltage_domains = GLOBAL_STATE->DEVICE_CONFIG.family.voltage_domains;
+        esp_err_t ret = ESP_OK;
+        // Set all regulators even if one fails, so the domains don't end up at different voltages
         for (int addr = 0; addr < 3; addr++) {
-            ESP_RETURN_ON_ERROR(TPS546_set_vout(core_voltage * voltage_domains, addr), TAG, "TPS546 set voltage failed!");
+            esp_err_t err = TPS546_set_vout(core_voltage * voltage_domains, addr);
+            if (err != ESP_OK) {
+                ESP_LOGE(TAG, "TPS546_%d set voltage failed!", addr);
+                ret = err;
+            }
         }
+        ESP_RETURN_ON_ERROR(ret, TAG, "TPS546 set voltage failed!");
     }
 
     return ESP_OK;
@@ -261,9 +268,16 @@ esp_err_t VCORE_check_fault(GlobalState * GLOBAL_STATE)
         ESP_RETURN_ON_ERROR(TPS546_check_status(GLOBAL_STATE, 0), TAG, "TPS546 check status failed!");
     }
     if (GLOBAL_STATE->DEVICE_CONFIG.TPS546_LV08) {
+        esp_err_t ret = ESP_OK;
+        // Check all regulators even if reading one fails
         for (int addr = 0; addr < 3; addr++) {
-            ESP_RETURN_ON_ERROR(TPS546_check_status(GLOBAL_STATE, addr), TAG, "TPS546 check status failed!");
+            esp_err_t err = TPS546_check_status(GLOBAL_STATE, addr);
+            if (err != ESP_OK) {
+                ESP_LOGE(TAG, "TPS546_%d check status failed!", addr);
+                ret = err;
+            }
         }
+        ESP_RETURN_ON_ERROR(ret, TAG, "TPS546 check status failed!");
     }
     return ESP_OK;
 }
