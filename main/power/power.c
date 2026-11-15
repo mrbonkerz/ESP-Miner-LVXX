@@ -25,16 +25,28 @@ void Power_get_output(GlobalState * GLOBAL_STATE, float * power_out, float * cur
     if (GLOBAL_STATE->DEVICE_CONFIG.TPS546_LV08) {
         cur_val = 0.0f;
         pow_val = 0.0f;
+        bool rails_on = false;
 
         for (int addr = 0; addr < 3; addr++) {
             float iout = TPS546_get_iout(addr);
             float vout = TPS546_get_vout(addr);
             cur_val += iout * 1000.0f;
             pow_val += vout * iout;
+            if (vout > 0.1f) {
+                rails_on = true;
+            }
         }
 
         // The power reading from the TPS546 is only output power, so add board offset.
-        pow_val += GLOBAL_STATE->DEVICE_CONFIG.family.power_offset;
+        // With all core rails off (mining paused/stopped) only the ESP32, display and
+        // fans draw power, which is far below the mining offset (measured ~3W at the plug).
+        uint16_t idle_power = GLOBAL_STATE->DEVICE_CONFIG.family.idle_power;
+        if (!rails_on && idle_power > 0) {
+            cur_val = 0.0f;
+            pow_val = idle_power;
+        } else {
+            pow_val += GLOBAL_STATE->DEVICE_CONFIG.family.power_offset;
+        }
     }
 
     *current_out = cur_val;

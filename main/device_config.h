@@ -58,6 +58,7 @@ typedef struct FamilyConfig {
     uint8_t asic_count;
     uint16_t max_power;
     uint16_t power_offset;
+    uint16_t idle_power;       // Board power (W) with core rails off; 0 = use power_offset
     uint16_t nominal_voltage;
     uint16_t voltage_domains;
     const char * swarm_color;
@@ -113,7 +114,7 @@ static const AsicConfig default_asic_configs[] = {
 
 static const FamilyConfig FAMILY_LV06        = { .id = LV06,        .name = "LV06",       .asic = ASIC_BM1366, .asic_count = 1, .max_power = 40, .power_offset = 18, .nominal_voltage = 12, .voltage_domains = 1, .swarm_color = "orange", };
 static const FamilyConfig FAMILY_LV07        = { .id = LV07,        .name = "LV07",       .asic = ASIC_BM1366, .asic_count = 2, .max_power = 40, .power_offset = 18, .nominal_voltage = 12, .voltage_domains = 1, .swarm_color = "orange", };
-static const FamilyConfig FAMILY_LV08        = { .id = LV08,        .name = "LV08",       .asic = ASIC_BM1366, .asic_count = 9, .max_power = 140,.power_offset = 18, .nominal_voltage = 12, .voltage_domains = 1, .swarm_color = "orange", };
+static const FamilyConfig FAMILY_LV08        = { .id = LV08,        .name = "LV08",       .asic = ASIC_BM1366, .asic_count = 9, .max_power = 140,.power_offset = 18, .idle_power = 3, .nominal_voltage = 12, .voltage_domains = 1, .swarm_color = "orange", };
 
 static const FamilyConfig FAMILY_MAX         = { .id = MAX,         .name = "Max",        .asic = ASIC_BM1397,   .asic_count = 1, .max_power =  25, .power_offset = 5,  .nominal_voltage = 5,  .voltage_domains = 1, .swarm_color = "red",      };
 static const FamilyConfig FAMILY_ULTRA       = { .id = ULTRA,       .name = "Ultra",      .asic = ASIC_BM1366,   .asic_count = 1, .max_power =  25, .power_offset = 5,  .nominal_voltage = 5,  .voltage_domains = 1, .swarm_color = "purple",   };
