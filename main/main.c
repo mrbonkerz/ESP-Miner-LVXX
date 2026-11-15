@@ -207,7 +207,9 @@ void app_main(void)
     }
 
     if (system_init_ret == ESP_OK) {
-        if (asic_initialize(&GLOBAL_STATE, ASIC_INIT_COLD_BOOT, 0) == 0) {
+        uint8_t boot_chip_count = asic_initialize(&GLOBAL_STATE, ASIC_INIT_COLD_BOOT, 0);
+        GLOBAL_STATE.asic_boot_init_done = true;
+        if (boot_chip_count == 0) {
             if (!GLOBAL_STATE.SELF_TEST_MODULE.is_active) {
                 return;
             }

@@ -142,7 +142,10 @@ void POWER_MANAGEMENT_task(void * pvParameters)
         power_management->vr_temp = Power_get_vreg_temp(GLOBAL_STATE);
         // User pause, hardware fault, or all pools unreachable
         bool wants_stop = sys_module->mining_paused || sys_module->hardware_fault || sys_module->pools_unavailable;
-        if (wants_stop && !is_paused) {
+        // Don't stop while the boot-time ASIC init is still running: it would set
+        // ASIC_initalized again after mining_stop() cleared it, leaving the result task
+        // reading a powered-down chain and starving uart_flush() in mining_start().
+        if (wants_stop && !is_paused && GLOBAL_STATE->asic_boot_init_done) {
             mining_stop(GLOBAL_STATE);
             is_paused = true;
         } else if (!wants_stop && is_paused) {

@@ -191,6 +191,8 @@ typedef struct GlobalState
     struct sv2_noise_ctx *sv2_noise_ctx;
 
     bool ASIC_initalized;
+    // Set once the boot-time ASIC initialization in app_main has returned (success or not)
+    volatile bool asic_boot_init_done;
     bool psram_is_available;
     bool filesystem_is_available;
 
